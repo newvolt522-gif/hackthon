@@ -1,0 +1,2 @@
+shortage,math_best=0.4,operational=0.2
+full,math_best=0.7,operational=0.7

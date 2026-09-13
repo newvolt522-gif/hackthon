@@ -1,0 +1,24 @@
+{
+  "feature_columns": [
+    "available_ratio",
+    "empty_dock_ratio",
+    "available_bikes",
+    "empty_docks",
+    "capacity",
+    "lag_1_available",
+    "lag_1_empty_docks",
+    "delta_30m_available",
+    "delta_30m_empty_docks",
+    "delta_60m_available",
+    "delta_60m_empty_docks",
+    "hour",
+    "day_of_week",
+    "is_weekend",
+    "station_hist_avg_available_ratio"
+  ],
+  "targets": {
+    "future_shortage_30m": "available_ratio_next_30m <= 0.15",
+    "future_full_30m": "empty_dock_ratio_next_30m <= 0.1"
+  },
+  "csv_format": "no header; column 0 = label; columns 1..n = features in listed order"
+}

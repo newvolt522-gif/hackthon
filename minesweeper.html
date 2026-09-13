@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>踩炸彈遊戲</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            color: #fff;
+        }
+
+        h1 {
+            margin-bottom: 16px;
+            font-size: 2rem;
+            text-shadow: 0 0 10px rgba(255, 200, 0, 0.5);
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .controls label {
+            font-size: 0.9rem;
+        }
+
+        .controls select, .controls button {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .controls select {
+            background: #1a1a2e;
+            color: #fff;
+            border: 1px solid #444;
+        }
+
+        .controls button {
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            color: #fff;
+            font-weight: bold;
+            transition: transform 0.1s;
+        }
+
+        .controls button:hover {
+            transform: scale(1.05);
+        }
+
+        .controls button:active {
+            transform: scale(0.95);
+        }
+
+        .info-bar {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+
+        .info-bar span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #board {
+            display: grid;
+            gap: 2px;
+            background: #0f3460;
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .cell {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s, transform 0.1s;
+        }
+
+        .cell.hidden {
+            background: linear-gradient(145deg, #3a506b, #2c3e50);
+            border: 1px solid #4a6fa5;
+        }
+
+        .cell.hidden:hover {
+            background: linear-gradient(145deg, #4a6fa5, #3a506b);
+            transform: scale(1.05);
+        }
+
+        .cell.revealed {
+            background: #1a1a2e;
+            border: 1px solid #333;
+            cursor: default;
+        }
+
+        .cell.flagged {
+            background: linear-gradient(145deg, #4a3060, #3a2050);
+            border: 1px solid #7b4fa5;
+        }
+
+        .cell.bomb {
+            background: #e94560;
+            border: 1px solid #ff6b6b;
+        }
+
+        .cell.bomb-triggered {
+            background: #ff0000;
+            border: 1px solid #ff4444;
+            animation: explode 0.3s ease-out;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .num-1 { color: #4fc3f7; }
+        .num-2 { color: #81c784; }
+        .num-3 { color: #ff8a65; }
+        .num-4 { color: #ba68c8; }
+        .num-5 { color: #e57373; }
+        .num-6 { color: #4dd0e1; }
+        .num-7 { color: #fff176; }
+        .num-8 { color: #a1887f; }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .overlay.show {
+            display: flex;
+        }
+
+        .overlay-content {
+            background: #1a1a2e;
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            border: 2px solid #4a6fa5;
+        }
+
+        .overlay-content h2 {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .overlay-content p {
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            color: #aaa;
+        }
+
+        .overlay-content button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .overlay-content button:hover {
+            transform: scale(1.05);
+        }
+
+        .win h2 { color: #81c784; }
+        .lose h2 { color: #e94560; }
+
+        .instructions {
+            margin-top: 16px;
+            font-size: 0.85rem;
+            color: #888;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>💣 踩炸彈遊戲</h1>
+
+    <div class="controls">
+        <label>難度：</label>
+        <select id="difficulty">
+            <option value="easy">初級 (9×9, 10顆炸彈)</option>
+            <option value="medium">中級 (16×16, 40顆炸彈)</option>
+            <option value="hard">高級 (16×30, 99顆炸彈)</option>
+        </select>
+        <button onclick="newGame()">🔄 新遊戲</button>
+    </div>
+
+    <div class="info-bar">
+        <span>💣 剩餘：<strong id="bomb-count">10</strong></span>
+        <span>⏱️ 時間：<strong id="timer">0</strong>s</span>
+        <span>🚩 旗幟：<strong id="flag-count">0</strong></span>
+    </div>
+
+    <div id="board"></div>
+
+    <div class="instructions">
+        <p>左鍵點擊翻開格子 | 右鍵點擊插旗標記炸彈</p>
+    </div>
+
+    <div class="overlay" id="overlay">
+        <div class="overlay-content" id="overlay-content">
+            <h2 id="overlay-title"></h2>
+            <p id="overlay-msg"></p>
+            <button onclick="closeOverlay(); newGame();">再玩一次</button>
+        </div>
+    </div>
+
+    <script>
+        const DIFFICULTY = {
+            easy: { rows: 9, cols: 9, bombs: 10 },
+            medium: { rows: 16, cols: 16, bombs: 40 },
+            hard: { rows: 16, cols: 30, bombs: 99 }
+        };
+
+        let rows, cols, bombs;
+        let board = [];
+        let revealed = [];
+        let flagged = [];
+        let gameOver = false;
+        let firstClick = true;
+        let timerInterval = null;
+        let seconds = 0;
+        let revealedCount = 0;
+
+        function newGame() {
+            const diff = document.getElementById('difficulty').value;
+            const config = DIFFICULTY[diff];
+            rows = config.rows;
+            cols = config.cols;
+            bombs = config.bombs;
+
+            board = [];
+            revealed = [];
+            flagged = [];
+            gameOver = false;
+            firstClick = true;
+            revealedCount = 0;
+            seconds = 0;
+
+            clearInterval(timerInterval);
+            timerInterval = null;
+            document.getElementById('timer').textContent = '0';
+            document.getElementById('bomb-count').textContent = bombs;
+            document.getElementById('flag-count').textContent = '0';
+
+            for (let r = 0; r < rows; r++) {
+                board[r] = [];
+                revealed[r] = [];
+                flagged[r] = [];
+                for (let c = 0; c < cols; c++) {
+                    board[r][c] = 0;
+                    revealed[r][c] = false;
+                    flagged[r][c] = false;
+                }
+            }
+
+            renderBoard();
+        }
+
+        function placeBombs(excludeR, excludeC) {
+            let placed = 0;
+            while (placed < bombs) {
+                const r = Math.floor(Math.random() * rows);
+                const c = Math.floor(Math.random() * cols);
+                // 避免在第一次點擊的位置及其周圍放置炸彈
+                if (board[r][c] === -1) continue;
+                if (Math.abs(r - excludeR) <= 1 && Math.abs(c - excludeC) <= 1) continue;
+                board[r][c] = -1;
+                placed++;
+            }
+            // 計算數字
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (board[r][c] === -1) continue;
+                    let count = 0;
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            const nr = r + dr, nc = c + dc;
+                            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && board[nr][nc] === -1) {
+                                count++;
+                            }
+                        }
+                    }
+                    board[r][c] = count;
+                }
+            }
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.style.gridTemplateColumns = `repeat(${cols}, 36px)`;
+            boardEl.innerHTML = '';
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell hidden';
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    cell.addEventListener('click', () => handleClick(r, c));
+                    cell.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        handleRightClick(r, c);
+                    });
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        function getCell(r, c) {
+            return document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
+        }
+
+        function handleClick(r, c) {
+            if (gameOver || flagged[r][c] || revealed[r][c]) return;
+
+            if (firstClick) {
+                firstClick = false;
+                placeBombs(r, c);
+                startTimer();
+            }
+
+            if (board[r][c] === -1) {
+                // 踩到炸彈
+                gameOver = true;
+                clearInterval(timerInterval);
+                revealAll(r, c);
+                setTimeout(() => showOverlay(false), 500);
+                return;
+            }
+
+            reveal(r, c);
+            checkWin();
+        }
+
+        function handleRightClick(r, c) {
+            if (gameOver || revealed[r][c]) return;
+
+            flagged[r][c] = !flagged[r][c];
+            const cell = getCell(r, c);
+
+            if (flagged[r][c]) {
+                cell.textContent = '🚩';
+                cell.classList.add('flagged');
+            } else {
+                cell.textContent = '';
+                cell.classList.remove('flagged');
+            }
+
+            updateFlagCount();
+        }
+
+        function reveal(r, c) {
+            if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+            if (revealed[r][c] || flagged[r][c]) return;
+
+            revealed[r][c] = true;
+            revealedCount++;
+            const cell = getCell(r, c);
+            cell.classList.remove('hidden');
+            cell.classList.add('revealed');
+
+            if (board[r][c] > 0) {
+                cell.textContent = board[r][c];
+                cell.classList.add(`num-${board[r][c]}`);
+            } else if (board[r][c] === 0) {
+                // 自動展開空白區域
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        if (dr === 0 && dc === 0) continue;
+                        reveal(r + dr, c + dc);
+                    }
+                }
+            }
+        }
+
+        function revealAll(triggerR, triggerC) {
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const cell = getCell(r, c);
+                    if (board[r][c] === -1) {
+                        cell.classList.remove('hidden', 'flagged');
+                        cell.classList.add('bomb');
+                        cell.textContent = '💣';
+                        if (r === triggerR && c === triggerC) {
+                            cell.classList.add('bomb-triggered');
+                        }
+                    } else if (flagged[r][c]) {
+                        // 錯誤的旗幟
+                        cell.classList.remove('hidden', 'flagged');
+                        cell.classList.add('revealed');
+                        cell.textContent = '❌';
+                    }
+                }
+            }
+        }
+
+        function checkWin() {
+            const totalSafe = rows * cols - bombs;
+            if (revealedCount === totalSafe) {
+                gameOver = true;
+                clearInterval(timerInterval);
+                setTimeout(() => showOverlay(true), 300);
+            }
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                seconds++;
+                document.getElementById('timer').textContent = seconds;
+            }, 1000);
+        }
+
+        function updateFlagCount() {
+            let count = 0;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (flagged[r][c]) count++;
+                }
+            }
+            document.getElementById('flag-count').textContent = count;
+            document.getElementById('bomb-count').textContent = bombs - count;
+        }
+
+        function showOverlay(win) {
+            const overlay = document.getElementById('overlay');
+            const content = document.getElementById('overlay-content');
+            const title = document.getElementById('overlay-title');
+            const msg = document.getElementById('overlay-msg');
+
+            content.classList.remove('win', 'lose');
+
+            if (win) {
+                content.classList.add('win');
+                title.textContent = '🎉 恭喜過關！';
+                msg.textContent = `你用了 ${seconds} 秒完成遊戲！`;
+            } else {
+                content.classList.add('lose');
+                title.textContent = '💥 炸彈爆炸了！';
+                msg.textContent = `遊戲結束，你撐了 ${seconds} 秒。`;
+            }
+
+            overlay.classList.add('show');
+        }
+
+        function closeOverlay() {
+            document.getElementById('overlay').classList.remove('show');
+        }
+
+        // 初始化
+        newGame();
+    </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+feature,gain,weight
+available_ratio,4079.5518,358
+empty_dock_ratio,302.6406,244
+available_bikes,253.0322,112
+hour,100.8193,591
+empty_docks,82.2226,86
+station_hist_avg_available_ratio,80.0401,280
+lag_1_available,76.0476,173
+lag_1_empty_docks,71.6387,115
+delta_30m_empty_docks,63.8388,202
+capacity,57.2482,180
+delta_60m_empty_docks,51.5913,212
+delta_30m_available,49.4387,177
+delta_60m_available,41.4056,156
+day_of_week,24.5824,122
+is_weekend,23.5491,5
