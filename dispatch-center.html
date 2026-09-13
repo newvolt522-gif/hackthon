@@ -198,6 +198,39 @@ body{
 #ai-kpi .kv{font-family:'Oswald';font-size:19px;font-weight:600;color:var(--beige);line-height:1}
 #ai-kpi .kk{font-size:8px;color:var(--ink-dim);letter-spacing:.04em;margin-top:2px}
 #ai-kpi .kpi-foot{font-size:9px;color:var(--ink-dim);margin-top:8px;line-height:1.5;letter-spacing:.02em}
+
+/* Station Monitor slide-in panel */
+#station-monitor{position:absolute;top:0;right:0;bottom:0;width:340px;background:var(--panel);border-left:1px solid #0c0d10;
+  transform:translateX(105%);transition:transform .22s ease;z-index:30;display:flex;flex-direction:column;box-shadow:-8px 0 24px rgba(0,0,0,.35)}
+#center.monitor-open #station-monitor{transform:none}
+#station-monitor .sm-head{display:flex;align-items:center;gap:8px;padding:10px 12px;background:linear-gradient(180deg,#282d36,#20242b);border-bottom:1px solid var(--panel-line)}
+#station-monitor .sm-head .dot{width:7px;height:7px;background:var(--beige);transform:rotate(45deg)}
+#station-monitor .sm-head h2{font-family:'Oswald';font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--offwhite);font-weight:600}
+#station-monitor .sm-count{font-family:'JetBrains Mono';font-size:11px;color:var(--beige);background:#14161b;padding:1px 7px;border:1px solid var(--panel-line)}
+#station-monitor .sm-close{margin-left:auto;background:transparent;border:1px solid var(--panel-line);color:var(--ink-dim);cursor:pointer;padding:2px 8px;font-size:12px}
+#station-monitor .sm-close:hover{color:var(--offwhite)}
+#station-monitor .sm-controls{display:flex;flex-wrap:wrap;gap:6px;padding:9px 12px;border-bottom:1px solid var(--panel-line)}
+#station-monitor .sm-controls input{flex:1 1 100%;padding:7px 10px;background:#14161b;border:1px solid var(--panel-line);color:var(--offwhite);font-family:'Noto Sans TC';font-size:12px;outline:none}
+#station-monitor .sm-controls input:focus{border-color:var(--beige)}
+#station-monitor .sm-controls select{flex:1;padding:6px 8px;background:#14161b;border:1px solid var(--panel-line);color:var(--ink);font-size:11px;font-family:'Oswald';letter-spacing:.04em;outline:none}
+#station-monitor .sm-list{flex:1;overflow-y:auto}
+.sm-row{display:grid;grid-template-columns:8px 1fr auto;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--panel-line);cursor:pointer;border-left:3px solid transparent}
+.sm-row:hover{background:var(--panel-2)}
+.sm-row.sel{background:#2c2018;border-left-color:var(--beige)}
+.sm-row .sm-dot{width:9px;height:9px;border-radius:50%}
+.sm-row .sm-main .sm-n{font-size:13px;color:var(--offwhite);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}
+.sm-row .sm-main .sm-sub{font-size:10px;color:var(--ink-dim);margin-top:2px;letter-spacing:.03em}
+.sm-row .sm-metrics{text-align:right}
+.sm-row .sm-metrics .sm-risk{font-family:'JetBrains Mono';font-size:13px;font-weight:600}
+.sm-row .sm-metrics .sm-iv{font-family:'Oswald';font-size:8px;letter-spacing:.1em;padding:1px 5px;margin-top:3px;display:inline-block}
+.sm-iv.iv-b-RELAY{background:var(--attention);color:#16191f}
+.sm-iv.iv-b-FLEET{background:var(--critical);color:#fff}
+.sm-iv.iv-b-HYBRID{background:var(--warning);color:#16191f}
+.sm-iv.iv-b-NONE{background:#2a2f38;color:var(--ink-dim);border:1px solid var(--panel-line)}
+#station-monitor .sm-foot{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-top:1px solid var(--panel-line);font-size:11px;color:var(--ink-dim)}
+#station-monitor .sm-page{background:transparent;border:1px solid var(--panel-line);color:var(--ink);cursor:pointer;padding:5px 9px;font-family:'Oswald';font-size:10px;letter-spacing:.06em}
+#station-monitor .sm-page:hover{color:var(--offwhite)}
+#station-monitor .sm-page:disabled{opacity:.35;cursor:default}
 #map-compass{top:12px;right:14px;width:44px;height:44px;border:1px solid var(--panel-line);background:rgba(18,21,26,.7);display:flex;align-items:center;justify-content:center;color:var(--beige);font-family:'Oswald';font-size:11px;letter-spacing:.1em}
 #route-readout{
   bottom:12px;right:14px;background:rgba(18,21,26,.9);border:1px solid var(--critical);
@@ -624,17 +657,21 @@ body.public-mode #public{display:flex}
       </div>
     </div>
     <div class="spacer"></div>
+    <div class="top-stat"><span class="k">TOTAL STATIONS</span><span class="v" id="ts-total">0</span></div>
+    <div class="top-stat"><span class="k">RELAY</span><span class="v" id="ts-relay" style="color:var(--attention)">0</span></div>
+    <div class="top-stat"><span class="k">HYBRID</span><span class="v warn" id="ts-hybrid">0</span></div>
+    <div class="top-stat"><span class="k">FLEET</span><span class="v crit" id="ts-fleet">0</span></div>
     <div class="top-stat"><span class="k">ACTIVE CALLS</span><span class="v crit" id="ts-calls">0</span></div>
-    <div class="top-stat"><span class="k">CRITICAL</span><span class="v crit" id="ts-crit">0</span></div>
     <div class="top-stat"><span class="k">DISPATCHED</span><span class="v warn" id="ts-disp">0</span></div>
-    <div class="top-stat"><span class="k">ON DUTY</span><span class="v" id="ts-duty">0</span></div>
-    <div class="top-stat"><span class="k">SHIFT / 日期</span><span class="v" id="ts-date">--</span></div>
     <div class="top-stat" style="border-left:1px solid var(--panel-line)"><span class="k">LOCAL TIME</span><span class="v" id="clock">--:--:--</span></div>
+    <button class="demo-btn" id="monitorBtn" onclick="toggleMonitor()" style="color:var(--beige);border-color:var(--beige)">☰ Stations</button>
     <button class="demo-btn" id="demoBtn" onclick="runDemo()">▶ Demo Mode</button>
     <div class="view-toggle" style="margin-left:8px">
       <button class="active" id="tgl-ops" onclick="toggleView('operations')">Operations</button>
       <button id="tgl-pub" onclick="toggleView('public')">Public</button>
     </div>
+    <!-- hidden legacy stats still updated by code -->
+    <span id="ts-crit" style="display:none"></span><span id="ts-duty" style="display:none"></span><span id="ts-date" style="display:none"></span>
   </div>
 
   <!-- LEFT: PRIORITY CALLS -->
@@ -675,6 +712,33 @@ body.public-mode #public{display:flex}
         <div><div class="n" id="rr-bikes">0</div><div class="k">BIKES</div></div>
         <div><div class="n" id="rr-time">0</div><div class="k">MIN</div></div>
         <div><div class="n" id="rr-dist">0</div><div class="k">KM</div></div>
+      </div>
+    </div>
+
+    <!-- STATION MONITOR (slide-in overlay over the map) -->
+    <div id="station-monitor">
+      <div class="sm-head">
+        <span class="dot"></span><h2>Station Monitor</h2>
+        <span class="sm-count" id="sm-count">0</span>
+        <button class="sm-close" onclick="toggleMonitor(false)">✕</button>
+      </div>
+      <div class="sm-controls">
+        <input id="sm-search" type="text" placeholder="搜尋站名 / ID / 行政區…" autocomplete="off" oninput="onMonitorSearch()">
+        <select id="sm-district" onchange="onMonitorFilter()"></select>
+        <select id="sm-sort" onchange="onMonitorFilter()">
+          <option value="priority">排序：Priority</option>
+          <option value="risk">排序：Risk</option>
+          <option value="avail">排序：可借車</option>
+          <option value="empty">排序：可還位</option>
+          <option value="cap">排序：車柱數</option>
+          <option value="district">排序：行政區</option>
+        </select>
+      </div>
+      <div class="sm-list" id="sm-list"></div>
+      <div class="sm-foot">
+        <button class="sm-page" id="sm-prev" onclick="monitorPage(-1)">‹ 上一頁</button>
+        <span id="sm-pageinfo">—</span>
+        <button class="sm-page" id="sm-next" onclick="monitorPage(1)">下一頁 ›</button>
       </div>
     </div>
   </div>
@@ -765,24 +829,24 @@ body.public-mode #public{display:flex}
    DATA MODEL  — everything driven from data, nothing hardcoded in markup
    Coordinates are isometric grid coords (gx, gy) on the city model.
    ===================================================================== */
+// ---- DEMO fallback stations (used only if stations.json cannot be loaded) ----
+// These 9 keep their curated demo scenario (fault, imbalance) so Demo Mode works offline.
+const DEMO_STATIONS = [
+    {id:'0012', name:'三重捷運站',   gx:3, gy:2,  lon:121.5024, lat:25.0691, status:'warning',  issue:'疑似異常車輛', avail:8,  reportedAvail:8,  suspectedFault:2, longestIdleMin:192, empty:22, cap:30, waitMin:0,  prio:'MED',  district:'三重區', faultConfirmed:false, delta30:-3, delta60:-7, deltaEmpty30:3,  deltaEmpty60:7,  imbalanceDuration:0,  importance:1.25},
+    {id:'0027', name:'新北產業園區', gx:1, gy:5,  lon:121.4593, lat:25.0619, status:'critical', issue:'無位可還',     avail:30, reportedAvail:30, suspectedFault:0, longestIdleMin:0,   empty:0,  cap:30, waitMin:28, prio:'HIGH', district:'五股區', faultConfirmed:false, delta30:5,  delta60:11, deltaEmpty30:-5, deltaEmpty60:-11,imbalanceDuration:67, importance:1.15},
+    {id:'0041', name:'板橋車站',     gx:4, gy:6,  lon:121.4637, lat:25.0143, status:'warning',  issue:'供需失衡',     avail:4,  reportedAvail:4,  suspectedFault:0, longestIdleMin:0,   empty:22, cap:28, waitMin:18, prio:'MED',  district:'板橋區', faultConfirmed:false, delta30:-2, delta60:-5, deltaEmpty30:2,  deltaEmpty60:5,  imbalanceDuration:41, importance:1.3},
+    {id:'0055', name:'新莊幸福站',   gx:2, gy:4,  lon:121.4419, lat:25.0359, status:'warning',  issue:'車輛偏少',     avail:5,  reportedAvail:5,  suspectedFault:1, longestIdleMin:74,  empty:19, cap:26, waitMin:14, prio:'MED',  district:'新莊區', faultConfirmed:false, delta30:-2, delta60:-4, deltaEmpty30:2,  deltaEmpty60:4,  imbalanceDuration:33, importance:1.0},
+    {id:'0063', name:'新埔站',       gx:5, gy:5,  lon:121.4680, lat:25.0278, status:'normal',   issue:'供給充足',     avail:18, reportedAvail:18, suspectedFault:0, longestIdleMin:0,   empty:6,  cap:24, waitMin:0,  prio:'LOW',  district:'板橋區', faultConfirmed:false, delta30:1,  delta60:2,  deltaEmpty30:-1, deltaEmpty60:-2, imbalanceDuration:0,  importance:1.0},
+    {id:'0078', name:'府中站',       gx:5, gy:7,  lon:121.4744, lat:25.0090, status:'normal',   issue:'運作正常',     avail:12, reportedAvail:12, suspectedFault:0, longestIdleMin:0,   empty:12, cap:26, waitMin:0,  prio:'LOW',  district:'板橋區', faultConfirmed:false, delta30:0,  delta60:1,  deltaEmpty30:0,  deltaEmpty60:-1, imbalanceDuration:0,  importance:1.0},
+    {id:'0084', name:'蘆洲站',       gx:2, gy:1,  lon:121.4735, lat:25.0847, status:'warning',  issue:'尖峰需求',     avail:3,  reportedAvail:3,  suspectedFault:0, longestIdleMin:0,   empty:21, cap:24, waitMin:11, prio:'MED',  district:'蘆洲區', faultConfirmed:false, delta30:-3, delta60:-6, deltaEmpty30:3,  deltaEmpty60:6,  imbalanceDuration:22, importance:0.85},
+    {id:'0091', name:'中和環球站',   gx:6, gy:8,  lon:121.4790, lat:24.9987, status:'normal',   issue:'運作正常',     avail:15, reportedAvail:15, suspectedFault:0, longestIdleMin:0,   empty:9,  cap:24, waitMin:0,  prio:'LOW',  district:'中和區', faultConfirmed:false, delta30:1,  delta60:0,  deltaEmpty30:-1, deltaEmpty60:0,  imbalanceDuration:0,  importance:1.0},
+    {id:'0102', name:'頭前庄站',     gx:3, gy:5,  lon:121.4602, lat:25.0402, status:'normal',   issue:'運作正常',     avail:10, reportedAvail:10, suspectedFault:0, longestIdleMin:0,   empty:14, cap:24, waitMin:0,  prio:'LOW',  district:'新莊區', faultConfirmed:false, delta30:0,  delta60:-1, deltaEmpty30:0,  deltaEmpty60:1,  imbalanceDuration:0,  importance:1.0},
+];
+
 const DATA = {
-  stations: [
-    // NOTE: `avail` = API 帳面可借車 (kept intact for future real-API mapping).
-    //       reportedAvail mirrors avail; suspectedFault + longestIdleMin drive anomaly detection.
-    // Trend fields are TIME-WINDOWED SUPPLY CHANGES (not "actual rentals"):
-    //   delta30/delta60           = 車輛供給變化 (available) over last 30 / 60 min (negative = losing bikes)
-    //   deltaEmpty30/deltaEmpty60 = 空位變化 over last 30 / 60 min
-    //   imbalanceDuration         = 目前供需失衡已持續分鐘數 (from status feed, NOT "unhandled time")
-    {id:'0012', name:'三重捷運站',   gx:3, gy:2,  status:'warning',  issue:'疑似異常車輛', avail:8,  reportedAvail:8,  suspectedFault:2, longestIdleMin:192, empty:22, cap:30, waitMin:0,  prio:'MED',  district:'三重區', faultConfirmed:false, delta30:-3, delta60:-7, deltaEmpty30:3,  deltaEmpty60:7,  imbalanceDuration:0,  importance:1.25},
-    {id:'0027', name:'新北產業園區', gx:1, gy:5,  status:'critical', issue:'無位可還',     avail:30, reportedAvail:30, suspectedFault:0, longestIdleMin:0,   empty:0,  cap:30, waitMin:28, prio:'HIGH', district:'五股區', faultConfirmed:false, delta30:5,  delta60:11, deltaEmpty30:-5, deltaEmpty60:-11,imbalanceDuration:67, importance:1.15},
-    {id:'0041', name:'板橋車站',     gx:4, gy:6,  status:'warning',  issue:'供需失衡',     avail:4,  reportedAvail:4,  suspectedFault:0, longestIdleMin:0,   empty:22, cap:28, waitMin:18, prio:'MED',  district:'板橋區', faultConfirmed:false, delta30:-2, delta60:-5, deltaEmpty30:2,  deltaEmpty60:5,  imbalanceDuration:41, importance:1.3},
-    {id:'0055', name:'新莊幸福站',   gx:2, gy:4,  status:'warning',  issue:'車輛偏少',     avail:5,  reportedAvail:5,  suspectedFault:1, longestIdleMin:74,  empty:19, cap:26, waitMin:14, prio:'MED',  district:'新莊區', faultConfirmed:false, delta30:-2, delta60:-4, deltaEmpty30:2,  deltaEmpty60:4,  imbalanceDuration:33, importance:1.0},
-    {id:'0063', name:'新埔站',       gx:5, gy:5,  status:'normal',   issue:'供給充足',     avail:18, reportedAvail:18, suspectedFault:0, longestIdleMin:0,   empty:6,  cap:24, waitMin:0,  prio:'LOW',  district:'板橋區', faultConfirmed:false, delta30:1,  delta60:2,  deltaEmpty30:-1, deltaEmpty60:-2, imbalanceDuration:0,  importance:1.0},
-    {id:'0078', name:'府中站',       gx:5, gy:7,  status:'normal',   issue:'運作正常',     avail:12, reportedAvail:12, suspectedFault:0, longestIdleMin:0,   empty:12, cap:26, waitMin:0,  prio:'LOW',  district:'板橋區', faultConfirmed:false, delta30:0,  delta60:1,  deltaEmpty30:0,  deltaEmpty60:-1, imbalanceDuration:0,  importance:1.0},
-    {id:'0084', name:'蘆洲站',       gx:2, gy:1,  status:'warning',  issue:'尖峰需求',     avail:3,  reportedAvail:3,  suspectedFault:0, longestIdleMin:0,   empty:21, cap:24, waitMin:11, prio:'MED',  district:'蘆洲區', faultConfirmed:false, delta30:-3, delta60:-6, deltaEmpty30:3,  deltaEmpty60:6,  imbalanceDuration:22, importance:0.85},
-    {id:'0091', name:'中和環球站',   gx:6, gy:8,  status:'normal',   issue:'運作正常',     avail:15, reportedAvail:15, suspectedFault:0, longestIdleMin:0,   empty:9,  cap:24, waitMin:0,  prio:'LOW',  district:'中和區', faultConfirmed:false, delta30:1,  delta60:0,  deltaEmpty30:-1, deltaEmpty60:0,  imbalanceDuration:0,  importance:1.0},
-    {id:'0102', name:'頭前庄站',     gx:3, gy:5,  status:'normal',   issue:'運作正常',     avail:10, reportedAvail:10, suspectedFault:0, longestIdleMin:0,   empty:14, cap:24, waitMin:0,  prio:'LOW',  district:'新莊區', faultConfirmed:false, delta30:0,  delta60:-1, deltaEmpty30:0,  deltaEmpty60:1,  imbalanceDuration:0,  importance:1.0},
-  ],
+  // starts with the demo fallback so parse-time init works; replaced by real data on load.
+  stations: DEMO_STATIONS.map(s=>({...s})),
+  dataSource: 'demo',   // 'api' | 'json' | 'demo'
   crew: [
     {num:'01', name:'陳志明', role:'DISPATCH', status:'on',    seed:11},
     {num:'02', name:'李婉如', role:'ANALYST',  status:'on',    seed:27},
@@ -798,6 +862,96 @@ const DATA = {
     {id:'D-004', route:'蘆洲 → 頭前庄',bikes:6,  status:'WAITING'},
   ]
 };
+
+/* =====================================================================
+   STATION DATA SERVICE
+   -------------------------------------------------------------------
+   Loads the CURRENT state of all stations (not history). Tries, in order:
+     1) GET /api/stations           (future FastAPI backend)
+     2) GET ./stations.json         (pre-exported snapshot of 1,529 real stations)
+     3) DEMO_STATIONS               (the 9 curated demo stations — offline fallback)
+   The frontend never runs XGBoost on raw history; it only consumes current
+   state + trend features, then computes DEMO prediction/intervention locally.
+   normalizeStation() maps the unified public schema onto the internal fields
+   the existing services already use (avail/reportedAvail/empty/cap/delta*).
+   ===================================================================== */
+const stationDataService = {
+  async getStations(){
+    // 1) future API
+    try{
+      const r = await fetch('/api/stations', {cache:'no-store'});
+      if(r.ok){
+        const j = await r.json();
+        const arr = j.stations || j;
+        if(Array.isArray(arr) && arr.length){
+          DATA.dataSource='api';
+          return arr.map((raw,i)=>this.normalizeStation(raw,i));
+        }
+      }
+    }catch(e){/* no backend — fall through */}
+    // 2) exported JSON snapshot
+    try{
+      const r = await fetch('./stations.json', {cache:'no-store'});
+      if(r.ok){
+        const j = await r.json();
+        const arr = j.stations || j;
+        if(Array.isArray(arr) && arr.length){
+          DATA.dataSource='json';
+          DATA.period = j.period;
+          return arr.map((raw,i)=>this.normalizeStation(raw,i));
+        }
+      }
+    }catch(e){/* file:// or missing — fall through */}
+    // 3) demo fallback — never white-screen
+    DATA.dataSource='demo';
+    return DEMO_STATIONS.map(s=>({...s}));
+  },
+
+  // Convert a raw record (API or JSON) into the internal working schema.
+  normalizeStation(raw, i){
+    const cap   = Math.max(1, Number(raw.capacity ?? raw.cap ?? raw.totalDocks ?? 1));
+    const avail = Number(raw.availableBikes ?? raw.available_bikes ?? raw.avail ?? 0);
+    const empty = Number(raw.emptyDocks ?? raw.empty_docks ?? raw.empty ?? Math.max(0,cap-avail));
+    const id    = String(raw.id ?? `${i}`.padStart(4,'0'));
+    return {
+      id,
+      name: raw.name ?? raw.station ?? id,
+      district: raw.district ?? '未分區',
+      lon: Number(raw.lon ?? raw.longitude ?? 0),
+      lat: Number(raw.lat ?? raw.latitude ?? 0),
+      cap,
+      // internal supply fields (API 帳面值 preserved as avail/reportedAvail)
+      avail, reportedAvail: avail, empty,
+      suspectedFault: Number(raw.suspectedFault ?? 0),
+      faultConfirmed: !!raw.faultConfirmed,
+      longestIdleMin: Number(raw.longestIdleMin ?? 0),
+      // trend features (time-windowed supply change)
+      delta30: Number(raw.delta30 ?? 0),
+      delta60: Number(raw.delta60 ?? 0),
+      deltaEmpty30: Number(raw.deltaEmpty30 ?? 0),
+      deltaEmpty60: Number(raw.deltaEmpty60 ?? 0),
+      hour: raw.hour, dow: raw.dow,
+      imbalanceDuration: Number(raw.imbalanceDuration ?? 0),
+      importance: Number(raw.importance ?? 1),
+      // legacy display fields
+      status:'normal', issue:'', waitMin:0, prio:'LOW'
+    };
+  }
+};
+
+/* ---- geo projection: lon/lat -> screen, with pan/zoom (for 1,529 markers) ----
+   Bounds are fit to the loaded stations on first render. */
+const GEO = { minLon:121.29, maxLon:121.68, minLat:24.85, maxLat:25.30, fitted:false,
+              zoom:1, panX:0, panY:0 };
+function fitGeoBounds(){
+  const pts=DATA.stations.filter(s=>s.lon&&s.lat);
+  if(pts.length<2) return;
+  let a=Infinity,b=-Infinity,c=Infinity,d=-Infinity;
+  pts.forEach(s=>{ a=Math.min(a,s.lon); b=Math.max(b,s.lon); c=Math.min(c,s.lat); d=Math.max(d,s.lat); });
+  const padX=(b-a)*0.06, padY=(d-c)*0.06;
+  GEO.minLon=a-padX; GEO.maxLon=b+padX; GEO.minLat=c-padY; GEO.maxLat=d+padY;
+  GEO.fitted=true;
+}
 
 /* =====================================================================
    SUSPECTED VEHICLE ANOMALY  +  EFFECTIVE SUPPLY
@@ -1318,8 +1472,10 @@ function buildCalls(){
         intervention: iv
       };
     })
-    .sort((a,b)=> b.priorityScore - a.priorityScore || b.risk30 - a.risk30);
+    .sort((a,b)=> b.priorityScore - a.priorityScore || b.risk30 - a.risk30)
+    .slice(0, CALLS_LIMIT);   // cap the priority queue (1,529 stations -> top N by priority)
 }
+const CALLS_LIMIT = 60;
 
 const STATE = {
   view:'operations',        // 'operations' | 'public'
@@ -1580,14 +1736,141 @@ function drawRoute(){
   });
 }
 
+/* ---- geo projection into the map viewport (with pan/zoom) ---- */
+function geoToScreen(lon, lat, w, h){
+  const nx=(lon-GEO.minLon)/(GEO.maxLon-GEO.minLon);
+  const ny=(lat-GEO.minLat)/(GEO.maxLat-GEO.minLat);
+  const pad=26;
+  const x=pad + nx*(w-pad*2);
+  const y=pad + (1-ny)*(h-pad*2);            // invert lat (north up)
+  return { x: (x-w/2)*GEO.zoom + w/2 + GEO.panX,
+           y: (y-h/2)*GEO.zoom + h/2 + GEO.panY };
+}
+
+/* ---- clustering: group stations into screen-space cells when zoomed out ----
+   Returns {clusters:[{x,y,members,dominant,critical}], singles:[{s,x,y}]}. */
+function buildStationClusters(project, w, h){
+  const cell = 46;                            // px cell size for clustering
+  const indi = GEO.zoom>=2.6;                 // show individual stations when zoomed in enough
+  const buckets=new Map();
+  const pts=[];
+  DATA.stations.forEach(s=>{
+    if(!s.lon||!s.lat) return;
+    const p=project(s.lon,s.lat,w,h);
+    if(p.x<-40||p.x>w+40||p.y<-40||p.y>h+40) return;   // cull offscreen
+    pts.push({s,x:p.x,y:p.y});
+  });
+  if(indi){ return {clusters:[], singles:pts}; }
+  pts.forEach(pt=>{
+    const key=Math.floor(pt.x/cell)+','+Math.floor(pt.y/cell);
+    if(!buckets.has(key)) buckets.set(key,[]);
+    buckets.get(key).push(pt);
+  });
+  const clusters=[], singles=[];
+  buckets.forEach(arr=>{
+    if(arr.length===1){ singles.push(arr[0]); return; }
+    let sx=0,sy=0; const cnt={FLEET:0,HYBRID:0,RELAY:0,NONE:0}; let selHere=false;
+    arr.forEach(pt=>{ sx+=pt.x; sy+=pt.y;
+      const t=(pt.s.intervention&&pt.s.intervention.type)||'NONE'; cnt[t]=(cnt[t]||0)+1;
+      if(pt.s.id===STATE.selectedId) selHere=true; });
+    const dominant = cnt.FLEET?'FLEET': cnt.HYBRID?'HYBRID': cnt.RELAY?'RELAY':'NONE';
+    clusters.push({x:sx/arr.length, y:sy/arr.length, n:arr.length, dominant,
+                   alert:cnt.FLEET+cnt.HYBRID+cnt.RELAY, sel:selHere, members:arr});
+  });
+  return {clusters, singles};
+}
+
+function ivTypeColor(t){
+  return t==='FLEET'?'#b23c34': t==='HYBRID'?'#c07b39': t==='RELAY'?'#c2a63c':'#6f8f5f';
+}
+
+function drawCluster(cx,cy,cl,context){
+  const c=context||ctx;
+  const r = 12 + Math.min(16, Math.log2(cl.n+1)*4.5);
+  const col = ivTypeColor(cl.dominant);
+  // outer ring pulses only if it contains an alert station
+  if(cl.alert){
+    c.strokeStyle = col+'55'; c.lineWidth=2;
+    c.beginPath(); c.arc(cx,cy,r+4+Math.sin(pulse)*2,0,Math.PI*2); c.stroke();
+  }
+  c.beginPath(); c.arc(cx,cy,r,0,Math.PI*2);
+  c.fillStyle='rgba(28,32,39,.92)'; c.fill();
+  c.strokeStyle=col; c.lineWidth=2.5; c.stroke();
+  c.fillStyle='#e8e2d5'; c.font='700 12px Oswald'; c.textAlign='center'; c.textBaseline='middle';
+  c.fillText(String(cl.n), cx, cy);
+  if(cl.alert){
+    c.fillStyle=col; c.font='700 9px Oswald';
+    c.fillText(cl.alert+'⚠', cx, cy+r+8);
+  }
+}
+
+// draw a single station as a small geo dot (used when clustered layer has singletons)
+function drawGeoStation(pt, context){
+  const c=context||ctx;
+  const s=pt.s, selected=STATE.selectedId===s.id;
+  const t=(s.intervention&&s.intervention.type)||'NONE';
+  const col=ivTypeColor(t);
+  const r= selected?9 : (t==='FLEET'?7:5);
+  if(t==='FLEET'||selected){
+    c.strokeStyle= selected?'rgba(183,173,153,'+(0.6-0.4*Math.abs(Math.sin(pulse)))+')':'rgba(178,60,52,'+(0.6-0.4*Math.abs(Math.sin(pulse)))+')';
+    c.lineWidth=2; c.beginPath(); c.arc(pt.x,pt.y,r+4+Math.sin(pulse)*2,0,Math.PI*2); c.stroke();
+  }
+  c.beginPath(); c.arc(pt.x,pt.y,r,0,Math.PI*2);
+  c.fillStyle= selected?'#d8cdb4':col; c.fill();
+  c.strokeStyle= selected?'#fff':'rgba(0,0,0,.55)'; c.lineWidth= selected?2:1.2; c.stroke();
+  const glyph=interventionGlyph(t);
+  if(glyph && r>=5){
+    c.fillStyle=(t==='RELAY'||t==='HYBRID')?'#16191f':'#fff';
+    c.font='700 9px Oswald'; c.textAlign='center'; c.textBaseline='middle';
+    c.fillText(glyph, pt.x, pt.y);
+  }
+  // label only for the selected station (avoid clutter with 1,500 labels)
+  if(selected){
+    c.font='11px "Noto Sans TC"'; c.textAlign='center'; c.textBaseline='bottom';
+    const tw=c.measureText(s.name).width;
+    c.fillStyle='rgba(18,21,26,.85)'; c.fillRect(pt.x-tw/2-5,pt.y-r-19,tw+10,15);
+    c.fillStyle='#e8e2d5'; c.fillText(s.name, pt.x, pt.y-r-6);
+  }
+}
+
+// draw a geo route (source -> target) for the dispatch plan
+function drawGeoRoute(project,w,h){
+  if(!ROUTE || !ROUTE.from.lon || !ROUTE.to.lon) return;
+  const a=project(ROUTE.from.lon,ROUTE.from.lat,w,h), b=project(ROUTE.to.lon,ROUTE.to.lat,w,h);
+  const mx=(a.x+b.x)/2, my=Math.min(a.y,b.y)-40;
+  const t=Math.min(STATE.routeAnim,1);
+  ctx.strokeStyle='rgba(178,60,52,.9)';ctx.lineWidth=3;ctx.setLineDash([7,6]);ctx.lineDashOffset=-pulse*6;
+  ctx.beginPath();ctx.moveTo(a.x,a.y);
+  const steps=40;
+  for(let i=1;i<=steps*t;i++){const u=i/steps;const x=(1-u)*(1-u)*a.x+2*(1-u)*u*mx+u*u*b.x;const y=(1-u)*(1-u)*a.y+2*(1-u)*u*my+u*u*b.y;ctx.lineTo(x,y);}
+  ctx.stroke();ctx.setLineDash([]);
+  [[a.x,a.y,'#c07b39','SOURCE'],[b.x,b.y,'#b23c34','TARGET']].forEach(([x,y,c,tag])=>{
+    ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#e8e2d5';ctx.font='700 9px Oswald';ctx.textAlign='center';ctx.fillText(tag,x,y-12);
+  });
+}
+
+// remember last drawn geometry for hit-testing clicks
+let OPS_HIT={clusters:[],singles:[]};
+
 function render(){
   ctx.clearRect(0,0,W,H);
   drawGround();
   drawBuildings();
-  // markers sorted back-to-front
-  const sorted=[...DATA.stations].sort((a,b)=>(a.gx+a.gy)-(b.gx+b.gy));
-  sorted.forEach(drawMarker);
-  drawRoute();
+  // For the small demo dataset keep the classic iso pins; for the full dataset
+  // use the geo-projected clustered layer (performant for 1,500+ stations).
+  if(DATA.stations.length<=12 && DATA.dataSource==='demo'){
+    const sorted=[...DATA.stations].sort((a,b)=>(a.gx+a.gy)-(b.gx+b.gy));
+    sorted.forEach(drawMarker);
+    drawRoute();
+    OPS_HIT={clusters:[],singles:[]};
+  } else {
+    const layer=buildStationClusters(geoToScreen, W, H);
+    layer.singles.forEach(pt=>drawGeoStation(pt, ctx));
+    layer.clusters.forEach(cl=>drawCluster(cl.x, cl.y, cl, ctx));
+    drawGeoRoute(geoToScreen, W, H);
+    OPS_HIT=layer;
+  }
 }
 
 function loop(){
@@ -1603,14 +1886,53 @@ function loop(){
 canvas.addEventListener('click',e=>{
   const r=canvas.getBoundingClientRect();
   const mx=e.clientX-r.left, my=e.clientY-r.top;
+  // demo iso pins
+  if(DATA.stations.length<=12 && DATA.dataSource==='demo'){
+    let hit=null,best=1e9;
+    DATA.stations.forEach(s=>{
+      const p=iso(s.gx,s.gy);const px=p.x,py=p.y+TILE.h/2-28;
+      const d=Math.hypot(mx-px,my-py);
+      if(d<20&&d<best){best=d;hit=s;}
+    });
+    if(hit) selectStation(hit.id);
+    return;
+  }
+  // geo layer: singles first, then clusters (cluster => zoom toward it)
   let hit=null,best=1e9;
-  DATA.stations.forEach(s=>{
-    const p=iso(s.gx,s.gy);const px=p.x,py=p.y+TILE.h/2-28;
-    const d=Math.hypot(mx-px,my-py);
-    if(d<20&&d<best){best=d;hit=s;}
-  });
-  if(hit){ selectStation(hit.id); }
+  OPS_HIT.singles.forEach(pt=>{ const d=Math.hypot(mx-pt.x,my-pt.y); if(d<12&&d<best){best=d;hit=pt.s;} });
+  if(hit){ selectStation(hit.id); return; }
+  let cl=null; best=1e9;
+  OPS_HIT.clusters.forEach(c=>{ const d=Math.hypot(mx-c.x,my-c.y); if(d<26&&d<best){best=d;cl=c;} });
+  if(cl){ zoomToPoint(mx,my,1.9); }
 });
+// wheel zoom on the operations map
+canvas.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const r=canvas.getBoundingClientRect();
+  zoomToPoint(e.clientX-r.left, e.clientY-r.top, e.deltaY<0?1.25:0.8);
+},{passive:false});
+function zoomToPoint(mx,my,factor){
+  const nz=Math.max(1, Math.min(9, GEO.zoom*factor));
+  // keep the point under the cursor stable
+  GEO.panX = mx - ((mx-GEO.panX-W/2)/GEO.zoom*nz + W/2);
+  GEO.panY = my - ((my-GEO.panY-H/2)/GEO.zoom*nz + H/2);
+  GEO.zoom = nz;
+}
+// center the map on a station (used by search / monitor / selection)
+function centerOnStation(s){
+  if(!s||!s.lon) return;
+  if(GEO.zoom<3) GEO.zoom=3.4;
+  const base=geoToScreenBase(s.lon,s.lat,W,H);
+  GEO.panX = W/2 - ((base.x-W/2)*GEO.zoom + W/2);
+  GEO.panY = H/2 - ((base.y-H/2)*GEO.zoom + H/2);
+}
+// projection WITHOUT pan/zoom (needed to solve for pan when centering)
+function geoToScreenBase(lon,lat,w,h){
+  const nx=(lon-GEO.minLon)/(GEO.maxLon-GEO.minLon);
+  const ny=(lat-GEO.minLat)/(GEO.maxLat-GEO.minLat);
+  const pad=26;
+  return { x: pad + nx*(w-pad*2), y: pad + (1-ny)*(h-pad*2) };
+}
 
 /* =====================================================================
    PANEL RENDERING
@@ -1741,8 +2063,13 @@ function selectStation(id){
   STATE.detailMode='detail';
   ROUTE=null; STATE.routeAnim=0; PLAN=null; RELAY=null;
   document.getElementById('route-readout').classList.remove('on');
+  // center the geo map on the selected station (full dataset only)
+  if(!(DATA.stations.length<=12 && DATA.dataSource==='demo')){
+    const s=st(id); if(s && s.lon) centerOnStation(s);
+  }
   renderCalls();
   renderRight();
+  highlightMonitorRow();
 }
 
 function renderRight(){
@@ -2313,19 +2640,117 @@ function updateTop(pop){
 
 /* ---- AI prediction KPI (DEMO) ---- */
 function updateAIKpi(){
-  let alerts=0, relay=0, fleet=0, hybrid=0;
+  let alerts=0, relay=0, fleet=0, hybrid=0, none=0;
   DATA.stations.forEach(s=>{
-    const iv=s.intervention||decideIntervention(s);
-    if(getStationRisk30(s)>=50) alerts++;
+    const iv=s.intervention||decideIntervention(s);      // uses cached station.intervention
+    if((iv.fleetRisk||0)>=50) alerts++;
     if(iv.type==='RELAY') relay++;
     else if(iv.type==='FLEET') fleet++;
     else if(iv.type==='HYBRID') hybrid++;
+    else none++;
   });
   const set=(id,v)=>{const e=document.getElementById(id); if(e)e.textContent=v;};
+  // map KPI panel
   set('kpi-alerts',alerts); set('kpi-relay',relay); set('kpi-fleet',fleet); set('kpi-hybrid',hybrid);
   const pot=relay+hybrid;
   const f=document.getElementById('kpi-potential');
   if(f) f.textContent=`今日預估可透過友愛接力降低 ${pot} 次站點失衡 (EST.)`;
+  // top-bar totals (TOTAL / RELAY / HYBRID / FLEET)
+  set('ts-total', DATA.stations.length);
+  set('ts-relay', relay); set('ts-hybrid', hybrid); set('ts-fleet', fleet);
+}
+
+/* =====================================================================
+   STATION MONITOR  (filter / sort / paginate the full station list)
+   ===================================================================== */
+const MONITOR = { open:false, q:'', district:'ALL', sort:'priority', page:0, perPage:50, rows:[] };
+
+function toggleMonitor(force){
+  MONITOR.open = (force===undefined) ? !MONITOR.open : !!force;
+  document.getElementById('center').classList.toggle('monitor-open', MONITOR.open);
+  const btn=document.getElementById('monitorBtn');
+  if(btn) btn.classList.toggle('running', MONITOR.open);
+  if(MONITOR.open) renderStationMonitor();
+}
+
+function buildDistrictFilter(){
+  const sel=document.getElementById('sm-district'); if(!sel) return;
+  const districts=[...new Set(DATA.stations.map(s=>s.district))].sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+  sel.innerHTML = `<option value="ALL">全部行政區 (${districts.length})</option>` +
+    districts.map(d=>`<option value="${d}">${d}</option>`).join('');
+}
+
+function onMonitorSearch(){ MONITOR.q=document.getElementById('sm-search').value.trim().toLowerCase(); MONITOR.page=0; renderStationMonitor(); }
+function onMonitorFilter(){
+  MONITOR.district=document.getElementById('sm-district').value;
+  MONITOR.sort=document.getElementById('sm-sort').value;
+  MONITOR.page=0; renderStationMonitor();
+}
+function monitorPage(d){
+  const maxPage=Math.max(0, Math.ceil(MONITOR.rows.length/MONITOR.perPage)-1);
+  MONITOR.page=Math.max(0,Math.min(maxPage, MONITOR.page+d));
+  renderStationMonitor(true);
+}
+
+function monitorFilteredRows(){
+  const q=MONITOR.q;
+  let rows=DATA.stations.filter(s=>{
+    if(MONITOR.district!=='ALL' && s.district!==MONITOR.district) return false;
+    if(q){ return s.name.toLowerCase().includes(q) || s.id.includes(q) || s.district.toLowerCase().includes(q); }
+    return true;
+  });
+  const risk = s => getStationRisk30(s);
+  const prio = s => calculateDispatchPriority(s).score;
+  const cmp={
+    priority:(a,b)=>prio(b)-prio(a),
+    risk:(a,b)=>risk(b)-risk(a),
+    avail:(a,b)=>effectiveAvail(b)-effectiveAvail(a),
+    empty:(a,b)=>(b.empty||0)-(a.empty||0),
+    cap:(a,b)=>(b.cap||0)-(a.cap||0),
+    district:(a,b)=>a.district.localeCompare(b.district,'zh-Hant')||a.name.localeCompare(b.name,'zh-Hant')
+  }[MONITOR.sort]||((a,b)=>0);
+  return rows.sort(cmp);
+}
+
+function renderStationMonitor(keepPage){
+  if(!MONITOR.open && keepPage!==true){ /* still compute count lazily */ }
+  MONITOR.rows = monitorFilteredRows();
+  const list=document.getElementById('sm-list'); if(!list) return;
+  const total=MONITOR.rows.length;
+  const maxPage=Math.max(0, Math.ceil(total/MONITOR.perPage)-1);
+  if(MONITOR.page>maxPage) MONITOR.page=maxPage;
+  const start=MONITOR.page*MONITOR.perPage;
+  const pageRows=MONITOR.rows.slice(start, start+MONITOR.perPage);
+
+  list.innerHTML = pageRows.map(s=>{
+    const iv=s.intervention||decideIntervention(s);
+    const r=getStationRisk30(s);
+    const col=ivTypeColor(iv.type);
+    return `<div class="sm-row ${s.id===STATE.selectedId?'sel':''}" data-id="${s.id}" onclick="monitorSelect('${s.id}')">
+      <span class="sm-dot" style="background:${col}"></span>
+      <div class="sm-main">
+        <div class="sm-n">${s.name}</div>
+        <div class="sm-sub">${s.district} · #${s.id} · 車柱 ${s.cap} · 借 ${effectiveAvail(s)} / 還 ${s.empty}</div>
+      </div>
+      <div class="sm-metrics">
+        <div class="sm-risk risk-${riskLevelClass(r)}">${r}%</div>
+        <div class="sm-iv iv-b-${iv.type}">${interventionTag(iv.type)}</div>
+      </div>
+    </div>`;
+  }).join('') || `<div style="padding:20px;color:var(--ink-dim);font-size:12px;text-align:center">找不到符合的站點</div>`;
+
+  document.getElementById('sm-count').textContent=total;
+  document.getElementById('sm-pageinfo').textContent = total? `${start+1}–${Math.min(start+MONITOR.perPage,total)} / ${total}` : '0 / 0';
+  document.getElementById('sm-prev').disabled = MONITOR.page<=0;
+  document.getElementById('sm-next').disabled = MONITOR.page>=maxPage;
+}
+
+function monitorSelect(id){
+  selectStation(id);
+  if(STATE.view!=='operations') toggleView('operations');
+}
+function highlightMonitorRow(){
+  document.querySelectorAll('.sm-row').forEach(r=>r.classList.toggle('sel', r.dataset.id===STATE.selectedId));
 }
 
 /* ---- toast ---- */
@@ -2374,9 +2799,22 @@ function publicStatus(s){
     msg:'目前可以正常借車與還車。', alert:false};
 }
 
-// distance (meters) from user location to a station, mock but consistent
-function metersTo(gx,gy){
-  const d=Math.hypot(gx-USER_LOC.gx, gy-USER_LOC.gy);
+// distance (meters) from user location to a station.
+// Uses real lon/lat (haversine) when available, else the grid-coord mock.
+function metersTo(a, b){
+  // support metersTo(station) and legacy metersTo(gx,gy)
+  let lon,lat,gx,gy;
+  if(typeof a==='object' && a){ lon=a.lon; lat=a.lat; gx=a.gx; gy=a.gy; }
+  else { gx=a; gy=b; }
+  if(lon && lat && USER_LOC.lon){
+    const R=6371000, toR=Math.PI/180;
+    const dLat=(lat-USER_LOC.lat)*toR, dLon=(lon-USER_LOC.lon)*toR;
+    const s1=Math.sin(dLat/2), s2=Math.sin(dLon/2);
+    const q=s1*s1+Math.cos(USER_LOC.lat*toR)*Math.cos(lat*toR)*s2*s2;
+    const m=R*2*Math.atan2(Math.sqrt(q),Math.sqrt(1-q));
+    return Math.round(m/10)*10;
+  }
+  const d=Math.hypot((gx??0)-USER_LOC.gx, (gy??0)-USER_LOC.gy);
   return Math.round(d*180/10)*10;   // ~180m per grid unit, rounded to 10m
 }
 function walkMin(meters){ return Math.max(1, Math.round(meters/75)); } // ~75 m/min
@@ -2384,7 +2822,7 @@ function walkMin(meters){ return Math.max(1, Math.round(meters/75)); } // ~75 m/
 // recommendation scoring: not distance-only.
 // consider distance, available bikes, capacity headroom, and anomaly penalty.
 function scoreStation(s, need /* 'bike' | 'dock' */){
-  const meters=metersTo(s.gx,s.gy);
+  const meters=metersTo(s);
   const supply = need==='dock' ? s.empty : effectiveAvail(s);  // 可借以有效供給計算
   if(supply<=0) return null; // cannot serve the need
   const distScore   = 1 - Math.min(meters,1500)/1500;        // closer better (0..1)
@@ -2430,11 +2868,13 @@ function searchStations(q){
 }
 function onSearchInput(v){
   const box=document.getElementById('pubResults');
-  const list=searchStations(v);
+  let list=searchStations(v);
   if(list.length===0){
     box.innerHTML='<div class="nores">找不到符合的站點</div>';
     box.classList.add('on'); return;
   }
+  const more=list.length>30 ? list.length-30 : 0;
+  list=list.slice(0,30);
   box.innerHTML=list.map(s=>{
     const ps=publicStatus(s);
     const col = ps.level==='green'?'var(--normal)':ps.level==='yellow'?'var(--attention)':ps.level==='park'?'var(--beige)':'var(--critical)';
@@ -2444,7 +2884,7 @@ function onSearchInput(v){
       <span class="rd">${s.district}</span>
       <span class="rb">🚲 ${effectiveAvail(s)}</span>
     </div>`;
-  }).join('');
+  }).join('') + (more? `<div class="nores">還有 ${more} 個符合的站點，請縮小關鍵字…</div>`:'');
   box.classList.add('on');
 }
 document.addEventListener('click',e=>{
@@ -2460,6 +2900,7 @@ function pubSelect(id){
   document.getElementById('pubResults').classList.remove('on');
   const s=st(id);
   const inp=document.getElementById('pubSearch'); if(inp && s) inp.value=s.name;
+  if(s && s.lon && !(DATA.stations.length<=12 && DATA.dataSource==='demo')) pubCenterOnStation(s);
   pubRenderInfo();
   pubRenderNearby();
 }
@@ -2480,7 +2921,7 @@ function pubRenderInfo(){
     return;
   }
   const ps=publicStatus(s);
-  const meters=metersTo(s.gx,s.gy);
+  const meters=metersTo(s);
   tag.textContent=`距您約 ${meters} m`;
   const chipClass='chip-'+ps.level;
   // Relay is now driven by the intervention decision (RELAY / HYBRID / active), not raw low-usage.
@@ -2561,7 +3002,7 @@ function pubRenderNearby(){
 /* ---- public navigation (mock user location -> station) ---- */
 function pubNavigate(id){
   const to=st(id); if(!to)return;
-  const meters=metersTo(to.gx,to.gy);
+  const meters=metersTo(to);
   STATE.pubNav={ to, meters, min:walkMin(meters) };
   STATE.pubRouteAnim=0;
   document.getElementById('pnav-name').textContent=`您的位置 → ${to.name}`;
@@ -2662,17 +3103,30 @@ function pubDrawMarker(s){
   pctx.fillStyle='rgba(18,21,26,.78)';pctx.fillRect(p.x-tw/2-5,pinY+r+7,tw+10,15);
   pctx.fillStyle=selected?'#e8e2d5':relayHere?'#d4bf6a':'#b7ad99';pctx.fillText(labelTxt,p.x,pinY+r+9);
 }
+// returns the user's screen position on the public map for the current mode
+function pubUserScreen(){
+  if(!(DATA.stations.length<=12 && DATA.dataSource==='demo') && USER_LOC.lon){
+    const p=pubGeoToScreen(USER_LOC.lon,USER_LOC.lat,PW,PH); return {x:p.x,y:p.y};
+  }
+  const p=piso(USER_LOC.gx,USER_LOC.gy); return {x:p.x, y:p.y+TILE.h/2-8};
+}
+function pubStationScreen(s){
+  if(!(DATA.stations.length<=12 && DATA.dataSource==='demo') && s.lon){
+    return pubGeoToScreen(s.lon,s.lat,PW,PH);
+  }
+  const p=piso(s.gx,s.gy); return {x:p.x, y:p.y+TILE.h/2-26};
+}
 function pubDrawUser(){
-  const p=piso(USER_LOC.gx,USER_LOC.gy);const y=p.y+TILE.h/2;
-  pctx.fillStyle='rgba(134,165,110,.25)';pctx.beginPath();pctx.arc(p.x,y-8,10+Math.sin(pulse)*3,0,Math.PI*2);pctx.fill();
+  const u=pubUserScreen();
+  pctx.fillStyle='rgba(134,165,110,.25)';pctx.beginPath();pctx.arc(u.x,u.y,10+Math.sin(pulse)*3,0,Math.PI*2);pctx.fill();
   pctx.fillStyle='#86a56e';pctx.strokeStyle='#fff';pctx.lineWidth=2;
-  pctx.beginPath();pctx.arc(p.x,y-8,6,0,Math.PI*2);pctx.fill();pctx.stroke();
-  pctx.fillStyle='#e8e2d5';pctx.font='700 9px Oswald';pctx.textAlign='center';pctx.fillText('您的位置',p.x,y-26);
+  pctx.beginPath();pctx.arc(u.x,u.y,6,0,Math.PI*2);pctx.fill();pctx.stroke();
+  pctx.fillStyle='#e8e2d5';pctx.font='700 9px Oswald';pctx.textAlign='center';pctx.fillText('您的位置',u.x,u.y-16);
 }
 function pubDrawNav(){
   if(!STATE.pubNav)return;
-  const a=piso(USER_LOC.gx,USER_LOC.gy), b=piso(STATE.pubNav.to.gx,STATE.pubNav.to.gy);
-  const ax=a.x, ay=a.y+TILE.h/2-8, bx=b.x, by=b.y+TILE.h/2-26;
+  const a=pubUserScreen(), b=pubStationScreen(STATE.pubNav.to);
+  const ax=a.x, ay=a.y, bx=b.x, by=b.y;
   const mx=(ax+bx)/2, my=Math.min(ay,by)-40;
   const t=Math.min(STATE.pubRouteAnim,1);
   pctx.strokeStyle='rgba(134,165,110,.95)';pctx.lineWidth=3;pctx.setLineDash([7,6]);pctx.lineDashOffset=-pulse*6;
@@ -2681,24 +3135,114 @@ function pubDrawNav(){
   for(let i=1;i<=steps*t;i++){const u=i/steps;const x=(1-u)*(1-u)*ax+2*(1-u)*u*mx+u*u*bx;const y=(1-u)*(1-u)*ay+2*(1-u)*u*my+u*u*by;pctx.lineTo(x,y);}
   pctx.stroke();pctx.setLineDash([]);
 }
+// public map has its own zoom/pan; reuses the shared GEO bounds
+const PGEO={zoom:1,panX:0,panY:0};
+function pubGeoToScreen(lon,lat,w,h){
+  const nx=(lon-GEO.minLon)/(GEO.maxLon-GEO.minLon);
+  const ny=(lat-GEO.minLat)/(GEO.maxLat-GEO.minLat);
+  const pad=26;
+  const x=pad+nx*(w-pad*2), y=pad+(1-ny)*(h-pad*2);
+  return { x:(x-w/2)*PGEO.zoom+w/2+PGEO.panX, y:(y-h/2)*PGEO.zoom+h/2+PGEO.panY };
+}
+function pubGeoBase(lon,lat,w,h){
+  const nx=(lon-GEO.minLon)/(GEO.maxLon-GEO.minLon);
+  const ny=(lat-GEO.minLat)/(GEO.maxLat-GEO.minLat);
+  const pad=26; return { x:pad+nx*(w-pad*2), y:pad+(1-ny)*(h-pad*2) };
+}
+function pubCenterOnStation(s){
+  if(!s||!s.lon) return;
+  if(PGEO.zoom<3) PGEO.zoom=3.4;
+  const base=pubGeoBase(s.lon,s.lat,PW,PH);
+  PGEO.panX=PW/2-((base.x-PW/2)*PGEO.zoom+PW/2);
+  PGEO.panY=PH/2-((base.y-PH/2)*PGEO.zoom+PH/2);
+}
+// public clustering (colors by simple availability status, plus relay marker)
+function pubBuildClusters(){
+  const cell=46, indi=PGEO.zoom>=2.6;
+  const pts=[];
+  DATA.stations.forEach(s=>{ if(!s.lon||!s.lat)return; const p=pubGeoToScreen(s.lon,s.lat,PW,PH);
+    if(p.x<-40||p.x>PW+40||p.y<-40||p.y>PH+40)return; pts.push({s,x:p.x,y:p.y}); });
+  if(indi) return {clusters:[],singles:pts};
+  const b=new Map();
+  pts.forEach(pt=>{const k=Math.floor(pt.x/cell)+','+Math.floor(pt.y/cell);(b.get(k)||b.set(k,[]).get(k)).push(pt);});
+  const clusters=[],singles=[];
+  b.forEach(arr=>{ if(arr.length===1){singles.push(arr[0]);return;}
+    let sx=0,sy=0,relay=0; arr.forEach(pt=>{sx+=pt.x;sy+=pt.y; const iv=pt.s.intervention; if(iv&&(iv.type==='RELAY'||iv.type==='HYBRID'))relay++; });
+    clusters.push({x:sx/arr.length,y:sy/arr.length,n:arr.length,relay}); });
+  return {clusters,singles};
+}
+let PUB_HIT={clusters:[],singles:[]};
 function pubRenderMap(){
   if(PW===0){ pubResize(); if(PW===0) return; }
   pctx.clearRect(0,0,PW,PH);
   pubDrawGround();
   pubDrawBuildings();
-  const sorted=[...DATA.stations].sort((a,b)=>(a.gx+a.gy)-(b.gx+b.gy));
-  sorted.forEach(pubDrawMarker);
+  if(DATA.stations.length<=12 && DATA.dataSource==='demo'){
+    const sorted=[...DATA.stations].sort((a,b)=>(a.gx+a.gy)-(b.gx+b.gy));
+    sorted.forEach(pubDrawMarker);
+    PUB_HIT={clusters:[],singles:[]};
+  } else {
+    const layer=pubBuildClusters();
+    layer.singles.forEach(pt=>pubDrawGeoStation(pt));
+    layer.clusters.forEach(cl=>pubDrawCluster(cl));
+    PUB_HIT=layer;
+  }
   pubDrawUser();
   pubDrawNav();
 }
-// public map click -> select station
+function pubDrawCluster(cl){
+  const r=12+Math.min(16,Math.log2(cl.n+1)*4.5);
+  pctx.beginPath();pctx.arc(cl.x,cl.y,r,0,Math.PI*2);
+  pctx.fillStyle='rgba(28,32,39,.92)';pctx.fill();
+  pctx.strokeStyle=cl.relay?'#c2a63c':'#6f8f5f';pctx.lineWidth=2.5;pctx.stroke();
+  pctx.fillStyle='#e8e2d5';pctx.font='700 12px Oswald';pctx.textAlign='center';pctx.textBaseline='middle';
+  pctx.fillText(String(cl.n),cl.x,cl.y);
+  if(cl.relay){ pctx.fillStyle='#c2a63c';pctx.font='700 9px Oswald';pctx.fillText('♻'+cl.relay,cl.x,cl.y+r+8); }
+}
+function pubDrawGeoStation(pt){
+  const s=pt.s, selected=STATE.pubSelectedId===s.id;
+  const ps=publicStatus(s);
+  const col=ps.level==='green'?'#6f8f5f':ps.level==='yellow'?'#c2a63c':ps.level==='park'?'#b7ad99':'#b23c34';
+  const iv=s.intervention||{}; const relayHere=s.relayActive||iv.type==='RELAY'||iv.type==='HYBRID';
+  const r=selected?9:5;
+  pctx.beginPath();pctx.arc(pt.x,pt.y,r,0,Math.PI*2);
+  pctx.fillStyle=selected?'#d8cdb4':col;pctx.fill();
+  pctx.strokeStyle=selected?'#fff':'rgba(0,0,0,.55)';pctx.lineWidth=selected?2:1.2;pctx.stroke();
+  if(relayHere){ pctx.fillStyle='#c2a63c';pctx.strokeStyle='#16191f';pctx.lineWidth=1;
+    pctx.beginPath();pctx.arc(pt.x+r,pt.y-r,4.5,0,Math.PI*2);pctx.fill();pctx.stroke();
+    pctx.fillStyle='#16191f';pctx.font='700 7px Oswald';pctx.textAlign='center';pctx.textBaseline='middle';pctx.fillText('♻',pt.x+r,pt.y-r); }
+  if(selected){
+    pctx.font='11px "Noto Sans TC"';pctx.textAlign='center';pctx.textBaseline='bottom';
+    const tw=pctx.measureText(s.name).width;
+    pctx.fillStyle='rgba(18,21,26,.85)';pctx.fillRect(pt.x-tw/2-5,pt.y-r-19,tw+10,15);
+    pctx.fillStyle='#e8e2d5';pctx.fillText(s.name,pt.x,pt.y-r-6);
+  }
+}
+// public map click -> select station / zoom cluster
 pubCanvas.addEventListener('click',e=>{
   const r=pubCanvas.getBoundingClientRect();
   const mx=e.clientX-r.left,my=e.clientY-r.top;
+  if(DATA.stations.length<=12 && DATA.dataSource==='demo'){
+    let hit=null,best=1e9;
+    DATA.stations.forEach(s=>{const p=piso(s.gx,s.gy);const px=p.x,py=p.y+TILE.h/2-26;const d=Math.hypot(mx-px,my-py);if(d<20&&d<best){best=d;hit=s;}});
+    if(hit) pubSelect(hit.id);
+    return;
+  }
   let hit=null,best=1e9;
-  DATA.stations.forEach(s=>{const p=piso(s.gx,s.gy);const px=p.x,py=p.y+TILE.h/2-26;const d=Math.hypot(mx-px,my-py);if(d<20&&d<best){best=d;hit=s;}});
-  if(hit) pubSelect(hit.id);
+  PUB_HIT.singles.forEach(pt=>{const d=Math.hypot(mx-pt.x,my-pt.y);if(d<12&&d<best){best=d;hit=pt.s;}});
+  if(hit){ pubSelect(hit.id); return; }
+  let cl=null;best=1e9;
+  PUB_HIT.clusters.forEach(c=>{const d=Math.hypot(mx-c.x,my-c.y);if(d<26&&d<best){best=d;cl=c;}});
+  if(cl){ const nz=Math.min(9,PGEO.zoom*1.9);
+    PGEO.panX=mx-((mx-PGEO.panX-PW/2)/PGEO.zoom*nz+PW/2); PGEO.panY=my-((my-PGEO.panY-PH/2)/PGEO.zoom*nz+PH/2); PGEO.zoom=nz; }
 });
+pubCanvas.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const r=pubCanvas.getBoundingClientRect();
+  const mx=e.clientX-r.left,my=e.clientY-r.top;
+  const nz=Math.max(1,Math.min(9,PGEO.zoom*(e.deltaY<0?1.25:0.8)));
+  PGEO.panX=mx-((mx-PGEO.panX-PW/2)/PGEO.zoom*nz+PW/2); PGEO.panY=my-((my-PGEO.panY-PH/2)/PGEO.zoom*nz+PH/2); PGEO.zoom=nz;
+},{passive:false});
 
 /* ---- view toggle ---- */
 function toggleView(v){
@@ -2730,20 +3274,25 @@ function runDemo(){
   btn.classList.add('running'); btn.textContent='● DEMO RUNNING';
   const steps=[];
   const add=(delay,fn)=>steps.push({delay,fn});
-  const T='0012';    // 三重捷運站 (cap 30) — demo target
+  // pick a real demo target: a mid/large-capacity station with docks (relay-friendly).
+  const demoTarget = (DATA.dataSource==='demo')
+    ? (st('0012')||DATA.stations[0])
+    : (DATA.stations.filter(s=>s.cap>=20).sort((a,b)=>b.cap-a.cap)[0] || DATA.stations[0]);
+  const T = demoTarget.id;
+  const TNAME = demoTarget.name;
 
   // [1] 站點目前正常，但趨勢正在惡化（仍有大量停車位 → 民眾行為有改善空間）
   add(0, ()=>{
     toggleView('operations');
     const s=st(T);
     s.avail=9; s.reportedAvail=9; s.suspectedFault=0; s.faultConfirmed=false; s.longestIdleMin=0;
-    s.empty=21; s.status='normal'; s.issue='運作正常'; s.prio='LOW';
+    s.empty=Math.max(18, Math.round(s.cap*0.6)); s.status='normal'; s.issue='運作正常'; s.prio='LOW';
     s.delta30=-3; s.delta60=-6; s.imbalanceDuration=0;
     DATA.dispatches=DATA.dispatches.filter(d=>!d._staged);
     refreshAllAI(); STATE.calls=buildCalls();
     renderCalls(); renderDispatch(); updateTop(true);
     selectStation(T);
-    toast('Step 1 · 三重捷運站 目前正常（9/30），但供給趨勢正在惡化');
+    toast(`Step 1 · ${TNAME} 目前正常（9/${s.cap}），但供給趨勢正在惡化`);
   });
   // [2] 預測：30 分鐘後缺車風險（趨勢惡化，但仍有大量空位 → 民眾可協助）
   add(3000, ()=>{
@@ -2772,7 +3321,7 @@ function runDemo(){
     publishRelayToPublic();
     const rec=recommendNearbyStations(st(T),'bike')[0];
     if(rec) pubNavigate(rec.station.id);
-    toast('Step 6 · Public View · 「建議還車到三重捷運站」+ 附近推薦導航');
+    toast(`Step 6 · Public View · 「建議還車到${TNAME}」+ 附近推薦導航`);
   });
   // [7] 模擬一段時間後風險仍高 → Relay 改善不足
   add(4200, ()=>{
@@ -2805,7 +3354,7 @@ function runDemo(){
   // [11] 完成後回到站點看風險重算
   add(11000, ()=>{
     selectStation(T);
-    toast(`Step 11 · 調度完成後重算 · 三重捷運站 目前 30min 風險 ${getStationRisk30(st(T))}%`);
+    toast(`Step 11 · 調度完成後重算 · ${TNAME} 目前 30min 風險 ${getStationRisk30(st(T))}%`);
   });
   // [12] 結束
   add(2600, ()=>{
@@ -2821,39 +3370,55 @@ function runDemo(){
 /* =====================================================================
    INIT
    ===================================================================== */
-function init(){
+// pick a good station to focus on first: prefer a FLEET/HYBRID/RELAY case, else first.
+function pickFocusStation(){
+  const byIv = t => DATA.stations.find(s=>s.intervention && s.intervention.type===t);
+  return byIv('FLEET') || byIv('HYBRID') || byIv('RELAY') || DATA.stations[0];
+}
+
+async function init(){
+  // 1) load real stations (API -> stations.json -> demo fallback). Never white-screen.
+  try{
+    const loaded = await stationDataService.getStations();
+    if(loaded && loaded.length){ DATA.stations = loaded; }
+  }catch(e){ /* keep demo fallback already in DATA.stations */ }
+
+  fitGeoBounds();
+  // mock user location near the centroid of the loaded stations (public navigation origin)
+  if(DATA.dataSource!=='demo'){
+    const pts=DATA.stations.filter(s=>s.lon&&s.lat);
+    if(pts.length){
+      USER_LOC.lon = pts.reduce((a,s)=>a+s.lon,0)/pts.length;
+      USER_LOC.lat = pts.reduce((a,s)=>a+s.lat,0)/pts.length;
+    }
+  }
   refreshAllAI();          // seed prediction + intervention on every station first
+  STATE.calls = buildCalls();
+  buildDistrictFilter();
+
   resize();
   pubResize();
   renderCalls();
   renderDuty();
   renderDispatch();
+  renderStationMonitor();
   updateTop();
-  selectStation('0012');   // open the top critical call
-  STATE.pubSelectedId='0012';
+
+  const focus = pickFocusStation();
+  if(focus){ selectStation(focus.id); STATE.pubSelectedId=focus.id; }
   pubRender();
   tick(); setInterval(tick,1000);
   loop();
+  toast(`已載入 ${DATA.stations.length} 個站點 · 資料來源：${DATA.dataSource.toUpperCase()}`);
 
   // proactive anomaly notification on load (does not wait for operator click)
   setTimeout(()=>{
-    const s=st('0012');
+    const s=st(STATE.selectedId);
     if(s && (s.suspectedFault??0)>0 && !s.faultConfirmed){
       const rep=(s.reportedAvail ?? s.avail), eff=effectiveAvail(s);
       toast(`🚨 主動告警 · ${s.name} 發現 ${s.suspectedFault} 台疑似異常車輛 · 有效供給 ${rep} → ${eff}`);
     }
-  }, 1500);
-
-  // simulated live event: a warning escalates after a bit (marker pulse + counter)
-  setTimeout(()=>{
-    const s=st('0084'); if(s && s.status==='warning'){
-      s.status='critical'; s.issue='無車可借'; s.avail=0; s.reportedAvail=0; s.suspectedFault=0; s.longestIdleMin=0; s.empty=s.cap; s.waitMin=24; s.prio='HIGH';
-      STATE.calls=buildCalls();
-      renderCalls(); updateTop(true);
-      if(STATE.view==='public') pubRender();
-      toast('新異常回報 · 蘆洲站 轉為 CRITICAL');
-    }
-  }, 9000);
+  }, 2200);
 }
 window.addEventListener('resize',()=>{resize(); pubResize(); const s=st(STATE.selectedId); if(s&&STATE.detailMode==='detail')drawSpark(s); if(STATE.view==='public')pubRender();});
 init();
