@@ -1,0 +1,3032 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YOUBIKE DISPATCH CONTROL — 新北市交通局派遣作戰室</title>
+<style>
+/* ============================================================
+   YOUBIKE DISPATCH CONTROL ROOM
+   Visual direction: "This Is the Police" tactical control room
+   Dark editorial / graphic-novel / retro dispatch aesthetic
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root{
+  /* base neutrals */
+  --navy:        #16191f;   /* deep charcoal navy */
+  --navy-2:      #1c2027;
+  --panel:       #21252d;
+  --panel-2:     #262b34;
+  --panel-line:  #33383f;
+  --warm-gray:   #6f6a60;
+  --beige:       #b7ad99;
+  --muted-beige: #8f8778;
+  --offwhite:    #e8e2d5;
+  --ink:         #cfc9bc;
+  --ink-dim:     #8b877c;
+
+  /* alert colors (muted, editorial) */
+  --critical:    #b23c34;   /* dark red */
+  --critical-2:  #d9564a;
+  --warning:     #c07b39;   /* muted orange */
+  --attention:   #c2a63c;   /* muted yellow */
+  --normal:      #6f8f5f;   /* muted green */
+  --normal-2:    #86a56e;
+
+  --grid-line:   rgba(183,173,153,0.05);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+html,body{height:100%}
+body{
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px),
+    radial-gradient(ellipse at 50% 0%, #22262e 0%, var(--navy) 60%, #101216 100%);
+  color:var(--ink);
+  font-family:'Noto Sans TC','Oswald',sans-serif;
+  overflow:hidden;
+  height:100vh;
+  letter-spacing:.02em;
+}
+
+.label{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.14em;font-weight:500}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* ===== app grid ===== */
+#app{
+  display:grid;
+  grid-template-columns: 20% 55% 25%;
+  grid-template-rows: 46px 1fr 168px;
+  grid-template-areas:
+    "top    top    top"
+    "left   center right"
+    "left   bottom right";
+  height:100vh;
+  gap:1px;
+  background:#0c0d10;
+}
+
+/* ===== top bar ===== */
+#topbar{
+  grid-area:top;
+  background:linear-gradient(180deg,#20242c,#191c22);
+  border-bottom:2px solid var(--critical);
+  display:flex;align-items:center;
+  padding:0 16px;gap:18px;
+  box-shadow:0 2px 0 rgba(0,0,0,.4);
+}
+#topbar .brand{display:flex;align-items:center;gap:10px}
+#topbar .sigil{
+  width:26px;height:26px;border:2px solid var(--beige);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--beige);font-weight:700;font-family:'Oswald';
+  transform:rotate(45deg);font-size:12px;
+}
+#topbar .sigil span{transform:rotate(-45deg)}
+#topbar h1{font-family:'Oswald';font-size:15px;letter-spacing:.22em;color:var(--offwhite);text-transform:uppercase;font-weight:600}
+#topbar .sub{font-size:11px;color:var(--ink-dim);letter-spacing:.1em}
+#topbar .spacer{flex:1}
+.top-stat{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1;padding:0 12px;border-left:1px solid var(--panel-line)}
+.top-stat .k{font-size:9px;color:var(--ink-dim);letter-spacing:.14em}
+.top-stat .v{font-family:'Oswald';font-size:17px;color:var(--offwhite);font-weight:600}
+.top-stat .v.crit{color:var(--critical-2)}
+.top-stat .v.warn{color:var(--warning)}
+#clock{font-family:'JetBrains Mono';font-size:16px;color:var(--beige);letter-spacing:.06em;min-width:82px;text-align:right}
+
+/* ===== panel chrome shared ===== */
+.panel{background:var(--panel);position:relative;overflow:hidden;display:flex;flex-direction:column}
+.panel-head{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 12px;
+  background:linear-gradient(180deg,#282d36,#20242b);
+  border-bottom:1px solid var(--panel-line);
+  flex:0 0 auto;
+}
+.panel-head .dot{width:7px;height:7px;background:var(--critical);transform:rotate(45deg)}
+.panel-head h2{font-family:'Oswald';font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--offwhite);font-weight:600}
+.panel-head .count{margin-left:auto;font-family:'JetBrains Mono';font-size:12px;color:var(--beige);background:#14161b;padding:1px 7px;border:1px solid var(--panel-line)}
+.panel-body{flex:1;overflow-y:auto;overflow-x:hidden}
+
+/* scrollbar */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:#14161b}
+::-webkit-scrollbar-thumb{background:#3a3f47;border:1px solid #14161b}
+::-webkit-scrollbar-thumb:hover{background:#4a505a}
+
+/* ===== LEFT : PRIORITY CALLS ===== */
+#left{grid-area:left;border-right:1px solid #0c0d10}
+.call{
+  padding:11px 12px 12px;border-bottom:1px solid var(--panel-line);
+  cursor:pointer;position:relative;transition:background .15s;
+  border-left:3px solid transparent;
+}
+.call:hover{background:var(--panel-2)}
+.call.selected{background:#2c2018;border-left-color:var(--critical)}
+.call .row1{display:flex;align-items:center;gap:8px}
+.call .pin{width:12px;height:12px;flex:0 0 auto;border-radius:50%}
+.call .name{font-weight:700;font-size:14px;color:var(--offwhite);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.call .prio{font-family:'Oswald';font-size:10px;letter-spacing:.12em;padding:1px 6px;font-weight:600}
+.call .issue{font-size:12px;color:var(--ink);margin:5px 0 6px;padding-left:20px}
+.call .meta{display:flex;gap:14px;padding-left:20px;align-items:baseline}
+.call .meta .t{font-family:'JetBrains Mono';font-size:16px;color:var(--offwhite);font-weight:500}
+.call .meta .t small{font-size:9px;color:var(--ink-dim);letter-spacing:.1em}
+.call .meta .dur{font-size:10px;color:var(--ink-dim);letter-spacing:.1em}
+
+/* anomaly call card */
+.call.anomaly{border-left-color:var(--critical);background:#241a18}
+.call.anomaly.selected{background:#2c2018}
+.call .anom-flag{font-size:13px;flex:0 0 auto;animation:flick 1.8s infinite}
+.call .issue.anom-issue{color:var(--critical-2);font-weight:700;padding-left:0;letter-spacing:.04em}
+.call .anom-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:6px}
+.call .anom-grid > div{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px dotted var(--panel-line);padding-bottom:2px}
+.call .anom-grid .al{font-size:10px;color:var(--ink-dim);letter-spacing:.06em}
+.call .anom-grid .av{font-family:'JetBrains Mono';font-size:14px;color:var(--offwhite);font-weight:500}
+.call .anom-grid .av.bad{color:var(--critical-2)}
+.call .anom-grid .av.good{color:var(--normal-2)}
+
+/* per-call risk/duration/priority metrics row */
+.call-metrics{display:flex;gap:6px;margin-top:8px;padding-left:20px}
+.call.anomaly .call-metrics{padding-left:0}
+.call-metrics .cm{flex:1;background:#181b21;border:1px solid var(--panel-line);padding:4px 6px;display:flex;flex-direction:column;align-items:center;gap:1px}
+.call-metrics .cml{font-size:8px;color:var(--ink-dim);letter-spacing:.08em}
+.call-metrics .cmv{font-family:'JetBrains Mono';font-size:13px;color:var(--offwhite);font-weight:600}
+.call-metrics .cmv.risk-high{color:var(--critical-2)}
+.call-metrics .cmv.risk-med{color:var(--warning)}
+.call-metrics .cmv.risk-low{color:var(--normal-2)}
+.call-metrics .cmv.prio-score{color:var(--beige)}
+.call-metrics .cmv.imb{color:var(--warning)}
+
+/* intervention badge row on call cards */
+.call-iv{display:flex;align-items:center;gap:8px;margin-top:8px;padding-left:20px}
+.call.anomaly .call-iv{padding-left:0}
+.call-iv .ivt{font-family:'Oswald';font-size:9px;letter-spacing:.12em;font-weight:700;padding:2px 7px;flex:0 0 auto}
+.call-iv .ivl{font-size:11px;color:var(--ink);letter-spacing:.02em}
+.iv-RELAY .ivt{background:var(--attention);color:#16191f}
+.iv-FLEET .ivt{background:var(--critical);color:#fff}
+.iv-HYBRID .ivt{background:var(--warning);color:#16191f}
+.iv-RELAY .ivl{color:var(--attention)}
+.iv-FLEET .ivl{color:var(--critical-2)}
+.iv-HYBRID .ivl{color:var(--warning)}
+
+.prio-HIGH{background:var(--critical);color:#fff}
+.prio-MED{background:var(--warning);color:#1a1206}
+.prio-LOW{background:var(--attention);color:#1a1206}
+.pin-critical{background:var(--critical);box-shadow:0 0 0 3px rgba(178,60,52,.25)}
+.pin-warning{background:var(--warning)}
+.pin-normal{background:var(--normal)}
+
+/* ===== CENTER : MAP ===== */
+#center{grid-area:center;background:#12151a;position:relative;overflow:hidden}
+#mapCanvas{display:block;width:100%;height:100%}
+.map-overlay{position:absolute;pointer-events:none}
+#map-title{top:12px;left:14px}
+#map-title .t1{font-family:'Oswald';font-size:13px;letter-spacing:.24em;color:var(--offwhite);text-transform:uppercase}
+#map-title .t2{font-size:11px;color:var(--ink-dim);letter-spacing:.1em;margin-top:2px}
+#map-legend{bottom:12px;left:14px;display:flex;flex-direction:column;gap:5px;background:rgba(18,21,26,.75);border:1px solid var(--panel-line);padding:8px 10px}
+#map-legend .lg{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.08em;color:var(--ink)}
+#map-legend .lg i{width:10px;height:10px;border-radius:50%;display:inline-block}
+#map-legend .lg-h{font-family:'Oswald';font-size:9px;letter-spacing:.14em;color:var(--beige);margin-bottom:2px}
+/* AI prediction KPI mini-panel */
+#ai-kpi{top:66px;right:14px;background:rgba(18,21,26,.82);border:1px solid var(--panel-line);padding:9px 11px;width:172px}
+#ai-kpi .kpi-h{font-family:'Oswald';font-size:10px;letter-spacing:.14em;color:var(--offwhite);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center}
+#ai-kpi .kpi-demo{margin-left:auto;font-size:7px;background:var(--attention);color:#16191f;padding:1px 5px;letter-spacing:.08em}
+#ai-kpi .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px}
+#ai-kpi .kpi-grid > div{display:flex;flex-direction:column;align-items:center;background:#14161b;border:1px solid var(--panel-line);padding:5px 2px}
+#ai-kpi .kv{font-family:'Oswald';font-size:19px;font-weight:600;color:var(--beige);line-height:1}
+#ai-kpi .kk{font-size:8px;color:var(--ink-dim);letter-spacing:.04em;margin-top:2px}
+#ai-kpi .kpi-foot{font-size:9px;color:var(--ink-dim);margin-top:8px;line-height:1.5;letter-spacing:.02em}
+#map-compass{top:12px;right:14px;width:44px;height:44px;border:1px solid var(--panel-line);background:rgba(18,21,26,.7);display:flex;align-items:center;justify-content:center;color:var(--beige);font-family:'Oswald';font-size:11px;letter-spacing:.1em}
+#route-readout{
+  bottom:12px;right:14px;background:rgba(18,21,26,.9);border:1px solid var(--critical);
+  padding:9px 13px;display:none;
+}
+#route-readout.on{display:block;animation:fadeIn .3s ease}
+#route-readout .rr-h{font-family:'Oswald';font-size:10px;letter-spacing:.16em;color:var(--critical-2);text-transform:uppercase}
+#route-readout .rr-nodes{font-size:12px;color:var(--offwhite);margin:4px 0;font-weight:700}
+#route-readout .rr-stats{display:flex;gap:16px}
+#route-readout .rr-stats div{text-align:center}
+#route-readout .rr-stats .n{font-family:'JetBrains Mono';font-size:16px;color:var(--beige)}
+#route-readout .rr-stats .k{font-size:8px;color:var(--ink-dim);letter-spacing:.1em}
+
+/* ===== RIGHT : INCIDENT DETAILS ===== */
+#right{grid-area:right;border-left:1px solid #0c0d10}
+#right .panel-body{padding:0}
+.idet{padding:14px}
+.idet .st-id{font-family:'JetBrains Mono';font-size:12px;color:var(--ink-dim);letter-spacing:.14em}
+.idet .st-name{font-family:'Noto Sans TC';font-size:22px;font-weight:900;color:var(--offwhite);margin:2px 0 12px;line-height:1.1}
+.status-banner{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:14px;border:1px solid;background:#1a1c22}
+.status-banner .sb-dot{width:14px;height:14px;border-radius:50%;flex:0 0 auto}
+.status-banner .sb-txt{flex:1}
+.status-banner .sb-txt .t{font-family:'Oswald';font-size:13px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+.status-banner .sb-time{font-family:'JetBrains Mono';font-size:20px}
+.sb-critical{border-color:var(--critical)}.sb-critical .t,.sb-critical .sb-time{color:var(--critical-2)}.sb-critical .sb-dot{background:var(--critical)}
+.sb-warning{border-color:var(--warning)}.sb-warning .t,.sb-warning .sb-time{color:var(--warning)}.sb-warning .sb-dot{background:var(--warning)}
+.sb-normal{border-color:var(--normal)}.sb-normal .t,.sb-normal .sb-time{color:var(--normal-2)}.sb-normal .sb-dot{background:var(--normal)}
+
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--panel-line);border:1px solid var(--panel-line);margin-bottom:16px}
+.stat-grid .cell{background:var(--panel-2);padding:11px 8px;text-align:center}
+.stat-grid .cell .n{font-family:'Oswald';font-size:26px;font-weight:600;color:var(--offwhite);line-height:1}
+.stat-grid .cell .k{font-size:9px;color:var(--ink-dim);letter-spacing:.1em;margin-top:4px;text-transform:uppercase}
+.stat-grid .cell.alarm .n{color:var(--critical-2)}
+
+.sec-h{font-family:'Oswald';font-size:11px;letter-spacing:.18em;color:var(--beige);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.sec-h::after{content:"";flex:1;height:1px;background:var(--panel-line)}
+.spark{height:56px;background:#191c22;border:1px solid var(--panel-line);margin-bottom:16px;position:relative}
+.spark canvas{display:block;width:100%;height:100%}
+.spark .lbl{position:absolute;top:4px;left:6px;font-size:8px;color:var(--ink-dim);letter-spacing:.1em}
+
+.btns{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.btn{
+  font-family:'Oswald';text-transform:uppercase;letter-spacing:.16em;font-size:12px;font-weight:600;
+  padding:11px;border:1px solid var(--panel-line);background:#20242c;color:var(--ink);
+  cursor:pointer;transition:all .15s;text-align:center;
+}
+.btn:hover{background:#2a2f38;color:var(--offwhite)}
+.btn.primary{background:var(--critical);border-color:var(--critical);color:#fff}
+.btn.primary:hover{background:var(--critical-2)}
+.btn.ghost{background:transparent}
+.btn:active{transform:translateY(1px)}
+
+/* dispatch recommendation */
+.reco{padding:14px;animation:slideIn .3s ease}
+.reco .reco-h{font-family:'Oswald';font-size:11px;letter-spacing:.16em;color:var(--critical-2);text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--critical)}
+.reco .flow{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px}
+.reco .flow .node{text-align:center;flex:1}
+.reco .flow .node .n1{font-family:'JetBrains Mono';font-size:10px;color:var(--ink-dim)}
+.reco .flow .node .n2{font-family:'Noto Sans TC';font-size:15px;font-weight:700;color:var(--offwhite)}
+.reco .flow .arrow{color:var(--critical-2);font-size:22px;animation:pulseArrow 1.4s infinite}
+.big-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--panel-line);border:1px solid var(--panel-line);margin-bottom:14px}
+.big-stats .cell{background:var(--panel-2);padding:14px 6px;text-align:center}
+.big-stats .cell .n{font-family:'Oswald';font-size:24px;color:var(--beige);font-weight:600;line-height:1}
+.big-stats .cell .k{font-size:8px;color:var(--ink-dim);letter-spacing:.1em;margin-top:5px}
+.traffic-row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:#191c22;border:1px solid var(--panel-line);margin-bottom:14px;font-size:11px;letter-spacing:.1em}
+.traffic-row .lab{color:var(--ink-dim)}
+.traffic-row .val{font-family:'Oswald';letter-spacing:.14em;color:var(--normal-2);font-weight:600}
+
+/* effective supply stat grid tweaks */
+.stat-grid.supply3 .cell.good .n{color:var(--normal-2)}
+/* anomaly banner in incident details */
+.anom-banner{border:1px solid var(--critical);background:rgba(178,60,52,.10);padding:11px 12px;margin-bottom:14px}
+.anom-banner.confirmed{border-color:var(--attention);background:rgba(194,166,60,.10)}
+.anom-banner .ab-h{font-family:'Oswald';font-size:12px;letter-spacing:.12em;color:var(--critical-2);text-transform:uppercase;font-weight:600;margin-bottom:7px}
+.anom-banner.confirmed .ab-h{color:var(--attention)}
+.anom-banner .ab-txt{font-size:12.5px;color:var(--ink);line-height:1.6}
+.anom-banner .ab-txt b{color:var(--offwhite)}
+.anom-banner .ab-txt b.bad{color:var(--critical-2)}
+.anom-banner .ab-txt b.good{color:var(--normal-2)}
+.anom-banner .ab-note{font-size:10px;color:var(--ink-dim);letter-spacing:.06em;margin:8px 0 9px}
+.btn.tiny{padding:8px 10px;font-size:11px;width:100%}
+.btn.tiny.warn{background:var(--critical);border-color:var(--critical);color:#fff}
+.btn.tiny.warn:hover{background:var(--critical-2)}
+
+/* demand risk row */
+.risk-row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;margin-bottom:16px;border:1px solid var(--panel-line);background:#191c22;font-size:12px}
+.risk-row .rk-l{color:var(--ink-dim);letter-spacing:.06em}
+.risk-row .rk-v{font-family:'Oswald';font-weight:600;letter-spacing:.08em}
+.risk-row.risk-high{border-color:var(--critical)}.risk-row.risk-high .rk-v{color:var(--critical-2)}
+.risk-row.risk-med{border-color:var(--warning)}.risk-row.risk-med .rk-v{color:var(--warning)}
+.risk-row.risk-low{border-color:var(--normal)}.risk-row.risk-low .rk-v{color:var(--normal-2)}
+
+/* trend / imbalance / priority-reason (detail forecast block) */
+.trend-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:8px 12px;margin-bottom:8px;border:1px solid var(--panel-line);background:#191c22;font-size:11px}
+.trend-row .tr-l{color:var(--ink-dim);letter-spacing:.06em;flex:0 0 auto}
+.trend-row .tr-v{text-align:right;font-size:11px}
+.trend-row .trend-FAST_FALLING{color:var(--critical-2)}
+.trend-row .trend-FALLING{color:var(--warning)}
+.trend-row .trend-RISING{color:var(--normal-2)}
+.trend-row .trend-STABLE{color:var(--ink)}
+.imb-row{padding:7px 12px;margin-bottom:8px;background:rgba(194,166,60,.10);border-left:3px solid var(--attention);color:var(--attention);font-size:11.5px;letter-spacing:.03em}
+.prio-reason{font-size:11px;color:var(--ink-dim);margin-bottom:16px;letter-spacing:.02em;line-height:1.5}
+
+/* supply columns in dispatch recommendation */
+.supply-cols{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--panel-line);border:1px solid var(--panel-line);margin-bottom:8px}
+.supply-cols .sc{background:var(--panel-2);padding:10px}
+.supply-cols .sc-h{font-family:'Oswald';font-size:10px;letter-spacing:.12em;color:var(--beige);text-transform:uppercase;margin-bottom:7px;text-align:center;border-bottom:1px solid var(--panel-line);padding-bottom:5px}
+.supply-cols .sc-row{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:var(--ink-dim);padding:2px 0}
+.supply-cols .sc-row b{font-family:'JetBrains Mono';font-size:13px;color:var(--offwhite);font-weight:500}
+.supply-cols .sc-row b.good{color:var(--normal-2)}
+.supply-cols .sc-row b.bad{color:var(--critical-2)}
+.supply-cols .sc-row b.beige{color:var(--beige)}
+.supply-note{font-size:11px;padding:7px 10px;margin-bottom:14px;letter-spacing:.03em}
+.supply-note.warn{color:var(--critical-2);background:rgba(178,60,52,.08);border-left:3px solid var(--critical)}
+.supply-note.ok{color:var(--normal-2);background:rgba(111,143,95,.08);border-left:3px solid var(--normal)}
+
+/* ===== PHASE-2 DISPATCH RECOMMENDATION ===== */
+.sec-h2{font-family:'Oswald';font-size:10px;letter-spacing:.16em;color:var(--beige);text-transform:uppercase;margin:14px 0 8px;display:flex;align-items:center;gap:8px}
+.sec-h2::after{content:"";flex:1;height:1px;background:var(--panel-line)}
+.pred-tag{font-size:11px;color:var(--ink-dim);letter-spacing:.03em;margin-bottom:6px}
+.pred-tag b{font-family:'JetBrains Mono';font-weight:600}
+.risk-high{color:var(--critical-2)!important}
+.risk-med{color:var(--warning)!important}
+.risk-low{color:var(--normal-2)!important}
+
+/* source candidate comparison */
+.src-cands{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--panel-line);border:1px solid var(--panel-line)}
+.src-c{background:var(--panel-2);padding:9px 10px;position:relative}
+.src-c.chosen{background:#20281f;box-shadow:inset 0 0 0 1px var(--normal)}
+.src-c .src-badge{position:absolute;top:-1px;right:-1px;background:var(--normal);color:#fff;font-family:'Oswald';font-size:8px;letter-spacing:.1em;padding:1px 6px;font-weight:700}
+.src-c .src-n{font-size:13px;font-weight:700;color:var(--offwhite);margin-bottom:5px}
+.src-c .src-row{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-dim);padding:1px 0}
+.src-c .src-row b{font-family:'JetBrains Mono';font-size:12px;color:var(--offwhite);font-weight:500}
+.src-c .src-row b.beige{color:var(--beige)}
+.src-note{font-size:10.5px;color:var(--ink-dim);margin:7px 0 4px;line-height:1.5;border-left:2px solid var(--panel-line);padding-left:8px}
+
+/* plan cards */
+.plan-list{display:flex;flex-direction:column;gap:8px}
+.plan-card{background:var(--panel-2);border:1px solid var(--panel-line);border-left:3px solid var(--panel-line);padding:9px 11px;cursor:pointer;transition:all .15s}
+.plan-card:hover{background:#2a2f38}
+.plan-card.sel{box-shadow:inset 0 0 0 1px var(--beige)}
+.plan-card.rec{border-left-color:var(--normal)}
+.plan-card.blocked{opacity:.62;border-left-color:var(--critical)}
+.plan-card .plan-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.plan-card .plan-title{font-family:'Oswald';font-size:13px;letter-spacing:.08em;color:var(--offwhite);font-weight:600}
+.plan-card .pt{font-family:'Oswald';font-size:9px;letter-spacing:.1em;padding:2px 7px;font-weight:700}
+.plan-card .pt.rec{background:var(--normal);color:#fff}
+.plan-card .pt.ok{background:#2a2f38;color:var(--ink);border:1px solid var(--panel-line)}
+.plan-card .pt.blocked{background:#2c1a18;color:var(--critical-2);border:1px solid var(--critical)}
+.plan-card .plan-rows{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px}
+.plan-card .pr{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-dim)}
+.plan-card .pr b{font-family:'JetBrains Mono';font-size:13px;color:var(--offwhite);font-weight:500}
+.plan-card .plan-warn{margin-top:7px;font-size:10.5px;color:var(--critical-2);letter-spacing:.02em}
+
+/* why this plan */
+.why{margin-top:14px;border:1px solid var(--panel-line);background:#191c22;padding:11px 12px}
+.why .why-h{font-family:'Oswald';font-size:11px;letter-spacing:.16em;color:var(--beige);text-transform:uppercase;margin-bottom:8px}
+.why .why-r{font-size:12px;color:var(--ink);line-height:1.7}
+.why .why-r.bad{color:var(--critical-2)}
+.why .why-concl{margin-top:8px;font-size:12.5px;color:var(--offwhite);border-top:1px solid var(--panel-line);padding-top:8px}
+.why .why-concl b{color:var(--beige);font-family:'JetBrains Mono'}
+
+/* before/after mini viz */
+.ba{border:1px solid var(--panel-line);background:#191c22;padding:10px}
+.ba-row{display:flex;align-items:center;gap:8px;padding:3px 0}
+.ba-row .ba-k{font-size:10.5px;color:var(--ink-dim);width:52px;flex:0 0 auto}
+.ba-row .ba-bar{flex:1;height:12px;background:#12151a;border:1px solid var(--panel-line);position:relative;overflow:hidden}
+.ba-row .ba-bar i{position:absolute;left:0;top:0;bottom:0;transition:width .4s ease}
+.ba-row .ba-v{font-family:'JetBrains Mono';font-size:11px;color:var(--offwhite);width:48px;text-align:right;flex:0 0 auto}
+.ba-row .ba-risk{font-family:'JetBrains Mono';font-size:12px;width:42px;text-align:right;flex:0 0 auto;font-weight:600}
+.risk-bg-high{background:var(--critical)}
+.risk-bg-med{background:var(--warning)}
+.risk-bg-low{background:var(--normal)}
+
+/* ===== PHASE-3 INTERVENTION ===== */
+.demo-pill{font-family:'Oswald';font-size:8px;letter-spacing:.12em;background:var(--attention);color:#16191f;padding:1px 6px;font-weight:700;margin-left:6px;vertical-align:middle}
+.iv-decision{border:1px solid var(--panel-line);background:#191c22;padding:11px 12px;margin-bottom:16px;border-left:3px solid var(--panel-line)}
+.iv-decision.iv-b-RELAY{border-left-color:var(--attention)}
+.iv-decision.iv-b-FLEET{border-left-color:var(--critical)}
+.iv-decision.iv-b-HYBRID{border-left-color:var(--warning)}
+.iv-decision.iv-b-NONE{border-left-color:var(--normal)}
+.iv-decision .ivd-head{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.iv-decision .ivd-badge{font-family:'Oswald';font-size:9px;letter-spacing:.12em;font-weight:700;padding:2px 8px}
+.iv-decision .ivd-title{font-family:'Noto Sans TC';font-size:14px;font-weight:700;color:var(--offwhite)}
+.iv-decision .ivd-demo{margin-left:auto;font-family:'Oswald';font-size:8px;letter-spacing:.1em;color:var(--ink-dim);border:1px solid var(--panel-line);padding:1px 6px}
+.iv-decision .ivd-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;margin-bottom:9px}
+.iv-decision .ivd-grid > div{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:var(--ink-dim);border-bottom:1px dotted var(--panel-line);padding-bottom:2px}
+.iv-decision .ivd-grid .v{font-family:'JetBrains Mono';font-size:13px;color:var(--offwhite);font-weight:500}
+.iv-decision .ivd-grid .v.good{color:var(--normal-2)}
+.iv-decision .ivd-reason{font-size:12px;color:var(--ink);line-height:1.6}
+.iv-decision .ivd-src{font-size:9px;color:var(--ink-dim);letter-spacing:.06em;margin-top:7px}
+.iv-RELAY{background:var(--attention);color:#16191f}
+.iv-FLEET{background:var(--critical);color:#fff}
+.iv-HYBRID{background:var(--warning);color:#16191f}
+.iv-NONE{background:var(--normal);color:#fff}
+.btn.attn{background:var(--attention);border-color:var(--attention);color:#16191f}
+.btn.attn:hover{background:#d4b64a}
+.btn.warn2{background:var(--warning);border-color:var(--warning);color:#16191f}
+.btn.warn2:hover{background:#d18a45}
+
+/* relay recommendation card (right panel) */
+.relay-card{border:1px solid var(--attention);background:rgba(194,166,60,.07);padding:13px;margin-bottom:12px}
+.relay-card .rc-station{font-family:'Noto Sans TC';font-size:19px;font-weight:900;color:var(--offwhite);line-height:1.1}
+.relay-card .rc-pred{font-size:12px;color:var(--ink-dim);margin:4px 0}
+.relay-card .rc-pred.warn{color:var(--critical-2)}
+.relay-card .rc-action{font-size:14px;color:var(--offwhite);margin:8px 0 10px}
+.relay-card .rc-action b{color:var(--attention)}
+.relay-card .relay-stats{display:grid;grid-template-columns:1fr;gap:4px;margin-bottom:9px}
+.relay-card .relay-stats > div{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;color:var(--ink-dim)}
+.relay-card .relay-stats .v{font-family:'JetBrains Mono';font-size:14px;color:var(--offwhite);font-weight:500}
+.relay-card .relay-stats .v.good{color:var(--normal-2)}
+.relay-card .rc-note{font-size:10px;color:var(--ink-dim);letter-spacing:.02em}
+
+/* intervention comparison table */
+.iv-compare{border:1px solid var(--panel-line);background:#191c22;margin-bottom:8px}
+.iv-compare .ivc-head,.iv-compare .ivc-row{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:1px}
+.iv-compare .ivc-head{background:linear-gradient(180deg,#282d36,#20242b)}
+.iv-compare .ivc-head span{font-family:'Oswald';font-size:9px;letter-spacing:.1em;color:var(--beige);padding:6px 8px;text-transform:uppercase}
+.iv-compare .ivc-row{border-top:1px solid var(--panel-line)}
+.iv-compare .ivc-row > span{font-size:11px;color:var(--ink-dim);padding:6px 8px}
+.iv-compare .ivc-row > b{font-family:'JetBrains Mono';font-size:12px;color:var(--offwhite);padding:6px 8px;text-align:center}
+.iv-compare .ivc-row > b.good{color:var(--normal-2)}
+
+/* ===== BOTTOM ===== */
+#bottom{grid-area:bottom;display:grid;grid-template-columns:1.35fr 1fr;gap:1px;background:#0c0d10;border-top:1px solid #0c0d10}
+#duty .panel-body{display:flex;gap:1px;padding:0;background:var(--panel-line);overflow-x:auto;overflow-y:hidden}
+.crew{background:var(--panel);min-width:118px;flex:1;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;border-bottom:2px solid transparent}
+.crew.on{border-bottom-color:var(--normal)}
+.crew.break{border-bottom-color:var(--attention)}
+.crew.off{border-bottom-color:var(--warm-gray);opacity:.6}
+.crew .num{font-family:'JetBrains Mono';font-size:9px;color:var(--ink-dim);align-self:flex-start}
+.crew .portrait{width:44px;height:44px;border:1px solid var(--panel-line);background:#14161b}
+.crew .cname{font-size:13px;font-weight:700;color:var(--offwhite)}
+.crew .role{font-family:'Oswald';font-size:8.5px;letter-spacing:.14em;color:var(--beige)}
+.crew .cstat{font-size:9px;letter-spacing:.08em;display:flex;align-items:center;gap:4px}
+.crew .cstat i{width:6px;height:6px;border-radius:50%;display:inline-block}
+.cstat.on i{background:var(--normal)}.cstat.on{color:var(--normal-2)}
+.cstat.break i{background:var(--attention)}.cstat.break{color:var(--attention)}
+.cstat.off i{background:var(--warm-gray)}.cstat.off{color:var(--warm-gray)}
+
+/* active dispatch */
+.mission{padding:9px 12px;border-bottom:1px solid var(--panel-line);display:flex;align-items:center;gap:10px}
+.mission .mid{font-family:'JetBrains Mono';font-size:11px;color:var(--beige);min-width:46px}
+.mission .mroute{flex:1;font-size:13px;color:var(--offwhite);font-weight:500}
+.mission .mroute small{color:var(--ink-dim);font-size:10px;display:block;font-weight:400;letter-spacing:.06em}
+.mission .mstat{font-family:'Oswald';font-size:9px;letter-spacing:.12em;padding:2px 7px;font-weight:600;white-space:nowrap}
+.mstat.WAITING{background:#2a2c33;color:var(--attention);border:1px solid var(--attention)}
+.mstat.PROGRESS{background:#2a2419;color:var(--warning);border:1px solid var(--warning)}
+.mstat.UNASSIGNED{background:#2c1a18;color:var(--critical-2);border:1px solid var(--critical);animation:flick 1.6s infinite}
+.mstat.DONE{background:#1e281a;color:var(--normal-2);border:1px solid var(--normal)}
+.mstat.DISPATCHING{background:#2a2c33;color:var(--attention);border:1px solid var(--attention);animation:flick 1.6s infinite}
+.mstat.TRANSIT{background:#2a2419;color:var(--warning);border:1px solid var(--warning)}
+.mstat.ARRIVED{background:#1f2833;color:#8fb3c9;border:1px solid #557089}
+.mstat.PARTIAL{background:#2a2419;color:var(--warning);border:1px solid var(--warning)}
+
+/* toast */
+#toast{position:fixed;bottom:180px;left:50%;transform:translateX(-50%);background:#20242c;border:1px solid var(--normal);border-left:4px solid var(--normal);padding:12px 20px;color:var(--offwhite);font-family:'Oswald';letter-spacing:.1em;font-size:13px;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:99;text-transform:uppercase}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+
+/* animations */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+@keyframes pulseArrow{0%,100%{opacity:.4}50%{opacity:1}}
+@keyframes flick{0%,100%{opacity:1}48%{opacity:1}50%{opacity:.35}52%{opacity:1}}
+@keyframes countPop{0%{transform:scale(1)}40%{transform:scale(1.35);color:var(--critical-2)}100%{transform:scale(1)}}
+.count-pop{animation:countPop .5s ease}
+
+/* ===== VIEW TOGGLE + DEMO (top bar) ===== */
+.view-toggle{display:flex;border:1px solid var(--panel-line);background:#14161b;margin-left:4px}
+.view-toggle button{
+  font-family:'Oswald';text-transform:uppercase;letter-spacing:.14em;font-size:11px;font-weight:600;
+  padding:7px 14px;background:transparent;color:var(--ink-dim);border:none;cursor:pointer;transition:all .15s;
+}
+.view-toggle button.active{background:var(--beige);color:#16191f}
+.view-toggle button:not(.active):hover{color:var(--offwhite)}
+.demo-btn{
+  font-family:'Oswald';text-transform:uppercase;letter-spacing:.14em;font-size:11px;font-weight:600;
+  padding:7px 12px;background:transparent;color:var(--attention);border:1px solid var(--attention);cursor:pointer;
+  margin-left:8px;transition:all .15s;
+}
+.demo-btn:hover{background:var(--attention);color:#16191f}
+.demo-btn:disabled{opacity:.4;cursor:default}
+.demo-btn.running{background:var(--attention);color:#16191f}
+
+/* ===== PUBLIC VIEW ===== */
+#public{
+  position:fixed;inset:0;z-index:40;display:none;flex-direction:column;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.10) 3px, rgba(0,0,0,0.10) 4px),
+    radial-gradient(ellipse at 50% 0%, #23272f 0%, var(--navy) 62%, #101216 100%);
+}
+body.public-mode #public{display:flex}
+#public .pub-top{
+  display:flex;align-items:center;gap:16px;padding:0 20px;height:58px;flex:0 0 auto;
+  background:linear-gradient(180deg,#20242c,#191c22);border-bottom:2px solid var(--beige);
+}
+#public .pub-brand{display:flex;align-items:center;gap:11px}
+#public .pub-brand .mark{width:30px;height:30px;background:var(--normal);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Oswald';font-weight:700;font-size:16px;border-radius:2px}
+#public .pub-brand h1{font-family:'Oswald';font-size:19px;letter-spacing:.14em;color:var(--offwhite);text-transform:uppercase;font-weight:600}
+#public .pub-brand .sub{font-size:11px;color:var(--ink-dim);letter-spacing:.08em}
+#public .pub-spacer{flex:1}
+#public .pub-clock{font-family:'JetBrains Mono';font-size:15px;color:var(--beige)}
+
+/* search bar */
+#public .pub-search{position:relative;width:340px;max-width:42vw}
+#public .pub-search input{
+  width:100%;padding:10px 14px 10px 38px;background:#14161b;border:1px solid var(--panel-line);
+  color:var(--offwhite);font-family:'Noto Sans TC';font-size:14px;letter-spacing:.03em;outline:none;
+}
+#public .pub-search input:focus{border-color:var(--beige)}
+#public .pub-search .mag{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-dim);font-size:15px;pointer-events:none}
+#public .pub-search .results{
+  position:absolute;top:100%;left:0;right:0;background:#1c2027;border:1px solid var(--panel-line);border-top:none;
+  z-index:5;max-height:280px;overflow-y:auto;display:none;
+}
+#public .pub-search .results.on{display:block}
+#public .pub-search .res{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--panel-line);display:flex;align-items:center;gap:10px}
+#public .pub-search .res:hover{background:var(--panel-2)}
+#public .pub-search .res .rdot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+#public .pub-search .res .rn{font-size:14px;color:var(--offwhite);font-weight:500;flex:1}
+#public .pub-search .res .rd{font-size:11px;color:var(--ink-dim)}
+#public .pub-search .res .rb{font-family:'JetBrains Mono';font-size:12px;color:var(--beige)}
+#public .pub-search .nores{padding:14px;color:var(--ink-dim);font-size:13px;text-align:center}
+
+/* public body layout */
+#public .pub-body{
+  flex:1;display:grid;
+  grid-template-columns: 1fr 380px;
+  grid-template-rows: 1fr 210px;
+  grid-template-areas:"pmap pinfo" "pnearby pinfo";
+  gap:1px;background:#0c0d10;min-height:0;
+}
+#public .pub-map{grid-area:pmap;position:relative;background:#12151a;overflow:hidden}
+#public .pub-info{grid-area:pinfo;background:var(--panel);overflow-y:auto;border-left:1px solid #0c0d10}
+#public .pub-nearby{grid-area:pnearby;background:var(--panel);overflow-y:auto;border-top:1px solid #0c0d10}
+
+/* map hint overlay for public */
+#pub-map-note{position:absolute;top:12px;left:14px;pointer-events:none}
+#pub-map-note .t1{font-family:'Oswald';font-size:13px;letter-spacing:.2em;color:var(--offwhite);text-transform:uppercase}
+#pub-map-note .t2{font-size:11px;color:var(--ink-dim);margin-top:2px}
+#pub-legend{position:absolute;bottom:12px;left:14px;display:flex;gap:12px;background:rgba(18,21,26,.8);border:1px solid var(--panel-line);padding:7px 12px}
+#pub-legend .lg{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink)}
+#pub-legend .lg i{width:10px;height:10px;border-radius:50%}
+#pub-nav-readout{position:absolute;bottom:12px;right:14px;background:rgba(18,21,26,.92);border:1px solid var(--normal);padding:10px 14px;display:none}
+#pub-nav-readout.on{display:block;animation:fadeIn .3s ease}
+#pub-nav-readout .h{font-family:'Oswald';font-size:10px;letter-spacing:.14em;color:var(--normal-2);text-transform:uppercase}
+#pub-nav-readout .n{font-size:13px;color:var(--offwhite);font-weight:700;margin:4px 0}
+#pub-nav-readout .s{display:flex;gap:18px}
+#pub-nav-readout .s div{text-align:center}
+#pub-nav-readout .s .v{font-family:'JetBrains Mono';font-size:16px;color:var(--beige)}
+#pub-nav-readout .s .k{font-size:8px;color:var(--ink-dim);letter-spacing:.1em}
+
+/* public panel headers */
+.pub-h{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--panel-line);background:linear-gradient(180deg,#282d36,#20242b);position:sticky;top:0;z-index:2}
+.pub-h h2{font-family:'Oswald';font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--offwhite);font-weight:600}
+.pub-h .tag{margin-left:auto;font-size:10px;color:var(--ink-dim);letter-spacing:.1em}
+
+/* station info (public) */
+.pinfo-inner{padding:18px 16px}
+.pinfo-inner .empty-hint{color:var(--ink-dim);text-align:center;padding-top:40px;font-size:14px;line-height:1.7}
+.pub-st-name{font-family:'Noto Sans TC';font-size:26px;font-weight:900;color:var(--offwhite);line-height:1.15}
+.pub-st-dist{font-size:12px;color:var(--ink-dim);letter-spacing:.06em;margin-top:2px}
+.pub-status-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;margin:16px 0;font-size:15px;font-weight:700;border-radius:2px}
+.chip-green{background:rgba(111,143,95,.15);color:var(--normal-2);border:1px solid var(--normal)}
+.chip-yellow{background:rgba(194,166,60,.13);color:var(--attention);border:1px solid var(--attention)}
+.chip-red{background:rgba(178,60,52,.15);color:var(--critical-2);border:1px solid var(--critical)}
+.chip-park{background:rgba(143,135,120,.15);color:var(--beige);border:1px solid var(--muted-beige)}
+.pub-bignums{display:flex;gap:1px;background:var(--panel-line);border:1px solid var(--panel-line);margin-bottom:16px}
+.pub-bignums .cell{flex:1;background:var(--panel-2);padding:16px 8px;text-align:center}
+.pub-bignums .cell .ico{font-size:16px}
+.pub-bignums .cell .n{font-family:'Oswald';font-size:34px;font-weight:700;color:var(--offwhite);line-height:1;margin-top:4px}
+.pub-bignums .cell .k{font-size:11px;color:var(--ink-dim);margin-top:5px}
+.pub-bignums .cell.zero .n{color:var(--critical-2)}
+.pub-msg{padding:12px 14px;background:#191c22;border-left:3px solid var(--beige);font-size:14px;color:var(--ink);line-height:1.6;margin-bottom:16px}
+.pub-msg.alert{border-left-color:var(--critical)}
+
+/* community relay */
+.relay{border:1px dashed var(--attention);background:rgba(194,166,60,.06);padding:14px;margin-bottom:16px}
+.relay .rh{display:flex;align-items:center;gap:8px;font-family:'Oswald';font-size:12px;letter-spacing:.14em;color:var(--attention);text-transform:uppercase;margin-bottom:8px}
+.relay p{font-size:13px;color:var(--ink);line-height:1.65;margin-bottom:10px}
+.relay .rbtn{font-family:'Oswald';font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--attention);background:transparent;border:1px solid var(--attention);padding:7px 12px;cursor:pointer}
+.relay .rbtn:hover{background:var(--attention);color:#16191f}
+.relay .relay-demo{margin-left:auto;font-size:8px;background:var(--attention);color:#16191f;padding:1px 6px;letter-spacing:.08em}
+.relay .relay-pub-pred{font-size:12px;color:var(--critical-2);margin-bottom:4px}
+.relay .relay-pub-action{font-size:15px;color:var(--offwhite);margin-bottom:9px}
+.relay .relay-pub-action b{color:var(--attention)}
+.relay .relay-pub-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px}
+.relay .relay-pub-stats > div{display:flex;flex-direction:column;background:#14161b;border:1px solid var(--panel-line);padding:6px 8px}
+.relay .relay-pub-stats span{font-size:9px;color:var(--ink-dim);letter-spacing:.04em}
+.relay .relay-pub-stats b{font-family:'Oswald';font-size:18px;color:var(--attention);font-weight:600}
+.relay .relay-pub-note{font-size:11px;color:var(--ink-dim);line-height:1.6;margin-bottom:10px}
+
+/* nearby recommendation cards */
+.nearby-wrap{padding:14px 16px;display:flex;gap:12px;flex-wrap:wrap}
+.nearby-empty{padding:24px 16px;color:var(--ink-dim);font-size:13px}
+.rec-card{
+  background:var(--panel-2);border:1px solid var(--panel-line);border-top:3px solid var(--normal);
+  padding:12px 14px;width:210px;flex:0 0 auto;position:relative;
+}
+.rec-card.best{border-top-color:var(--beige);box-shadow:0 0 0 1px var(--beige)}
+.rec-card.ai{border-top-color:var(--attention)}
+.rec-card .rc-badge{position:absolute;top:-1px;right:-1px;background:var(--beige);color:#16191f;font-family:'Oswald';font-size:9px;letter-spacing:.1em;padding:2px 7px;font-weight:700}
+.rec-card .rc-ai{display:inline-block;background:rgba(194,166,60,.18);color:var(--attention);font-size:9px;letter-spacing:.06em;padding:2px 6px;margin:3px 0;border:1px solid var(--attention)}
+.rec-card .rc-name{font-size:16px;font-weight:700;color:var(--offwhite)}
+.rec-card .rc-dist{font-size:11px;color:var(--ink-dim);margin:2px 0 10px}
+.rec-card .rc-stats{display:flex;gap:14px;margin-bottom:12px}
+.rec-card .rc-stats .rs .v{font-family:'Oswald';font-size:20px;color:var(--beige);font-weight:600}
+.rec-card .rc-stats .rs .k{font-size:9px;color:var(--ink-dim);letter-spacing:.06em}
+.rec-card .rc-go{width:100%;font-family:'Oswald';text-transform:uppercase;letter-spacing:.12em;font-size:12px;font-weight:600;padding:9px;background:var(--normal);color:#fff;border:none;cursor:pointer;transition:background .15s}
+.rec-card .rc-go:hover{background:var(--normal-2)}
+.rec-card .rc-go.active{background:var(--beige);color:#16191f}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <div class="brand">
+      <div class="sigil"><span>Y</span></div>
+      <div>
+        <h1>YouBike Dispatch Control</h1>
+        <div class="sub">新北市交通局 · 派遣作戰室 / OPERATIONS CENTER</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="top-stat"><span class="k">ACTIVE CALLS</span><span class="v crit" id="ts-calls">0</span></div>
+    <div class="top-stat"><span class="k">CRITICAL</span><span class="v crit" id="ts-crit">0</span></div>
+    <div class="top-stat"><span class="k">DISPATCHED</span><span class="v warn" id="ts-disp">0</span></div>
+    <div class="top-stat"><span class="k">ON DUTY</span><span class="v" id="ts-duty">0</span></div>
+    <div class="top-stat"><span class="k">SHIFT / 日期</span><span class="v" id="ts-date">--</span></div>
+    <div class="top-stat" style="border-left:1px solid var(--panel-line)"><span class="k">LOCAL TIME</span><span class="v" id="clock">--:--:--</span></div>
+    <button class="demo-btn" id="demoBtn" onclick="runDemo()">▶ Demo Mode</button>
+    <div class="view-toggle" style="margin-left:8px">
+      <button class="active" id="tgl-ops" onclick="toggleView('operations')">Operations</button>
+      <button id="tgl-pub" onclick="toggleView('public')">Public</button>
+    </div>
+  </div>
+
+  <!-- LEFT: PRIORITY CALLS -->
+  <div id="left" class="panel">
+    <div class="panel-head"><span class="dot"></span><h2>Priority Calls</h2><span class="count" id="calls-count">0</span></div>
+    <div class="panel-body" id="calls-list"></div>
+  </div>
+
+  <!-- CENTER: MAP -->
+  <div id="center">
+    <canvas id="mapCanvas"></canvas>
+    <div class="map-overlay" id="map-title">
+      <div class="t1">Sector Map — New Taipei</div>
+      <div class="t2">ISOMETRIC CITY GRID · LIVE STATION FEED</div>
+    </div>
+    <div class="map-overlay" id="map-compass">N ▲</div>
+    <div class="map-overlay" id="map-legend">
+      <div class="lg-h">AI INTERVENTION</div>
+      <div class="lg"><i style="background:var(--critical)"></i>車隊調度 FLEET</div>
+      <div class="lg"><i style="background:var(--warning)"></i>混合策略 HYBRID</div>
+      <div class="lg"><i style="background:var(--attention)"></i>友愛接力 RELAY</div>
+      <div class="lg"><i style="background:var(--normal)"></i>正常 NORMAL</div>
+    </div>
+    <div class="map-overlay" id="ai-kpi">
+      <div class="kpi-h">AI PREDICTION <span class="kpi-demo">DEMO</span></div>
+      <div class="kpi-grid">
+        <div><span class="kv" id="kpi-alerts">0</span><span class="kk">30m 風險告警</span></div>
+        <div><span class="kv" id="kpi-relay">0</span><span class="kk">Relay 候選</span></div>
+        <div><span class="kv" id="kpi-fleet">0</span><span class="kk">需車隊</span></div>
+        <div><span class="kv" id="kpi-hybrid">0</span><span class="kk">Hybrid</span></div>
+      </div>
+      <div class="kpi-foot" id="kpi-potential">今日預估可透過友愛接力降低 — 次失衡 (EST.)</div>
+    </div>
+    <div class="map-overlay" id="route-readout">
+      <div class="rr-h">Dispatch Route</div>
+      <div class="rr-nodes" id="rr-nodes">—</div>
+      <div class="rr-stats">
+        <div><div class="n" id="rr-bikes">0</div><div class="k">BIKES</div></div>
+        <div><div class="n" id="rr-time">0</div><div class="k">MIN</div></div>
+        <div><div class="n" id="rr-dist">0</div><div class="k">KM</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: INCIDENT DETAILS -->
+  <div id="right" class="panel">
+    <div class="panel-head"><span class="dot"></span><h2 id="right-title">Incident Details</h2></div>
+    <div class="panel-body" id="right-body"></div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div id="bottom">
+    <div id="duty" class="panel">
+      <div class="panel-head"><span class="dot" style="background:var(--normal)"></span><h2>Today's Duty</h2><span class="count" id="duty-count">0</span></div>
+      <div class="panel-body" id="duty-list"></div>
+    </div>
+    <div id="dispatch" class="panel">
+      <div class="panel-head"><span class="dot" style="background:var(--warning)"></span><h2>Active Dispatch</h2><span class="count" id="disp-count">0</span></div>
+      <div class="panel-body" id="dispatch-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ PUBLIC VIEW ============ -->
+<div id="public">
+  <div class="pub-top">
+    <div class="pub-brand">
+      <div class="mark">Y</div>
+      <div>
+        <h1>YouBike Now</h1>
+        <div class="sub">新北市公共自行車 · 即時借還查詢</div>
+      </div>
+    </div>
+    <div class="pub-search">
+      <span class="mag">⌕</span>
+      <input id="pubSearch" type="text" placeholder="搜尋站點名稱 / 區域…" autocomplete="off"
+             oninput="onSearchInput(this.value)" onfocus="onSearchInput(this.value)">
+      <div class="results" id="pubResults"></div>
+    </div>
+    <div class="pub-spacer"></div>
+    <div class="pub-clock" id="pubClock">--:--</div>
+    <div class="view-toggle" style="margin-left:16px">
+      <button id="tgl-ops2" onclick="toggleView('operations')">Operations</button>
+      <button class="active" id="tgl-pub2" onclick="toggleView('public')">Public</button>
+    </div>
+  </div>
+
+  <div class="pub-body">
+    <div class="pub-map">
+      <canvas id="pubMapCanvas"></canvas>
+      <div id="pub-map-note">
+        <div class="t1">附近站點地圖</div>
+        <div class="t2">選擇站點查看即時借還狀態</div>
+      </div>
+      <div id="pub-legend">
+        <div class="lg"><i style="background:var(--normal)"></i>可借車</div>
+        <div class="lg"><i style="background:var(--attention)"></i>車輛較少</div>
+        <div class="lg"><i style="background:var(--critical)"></i>暫無車</div>
+        <div class="lg"><i style="background:var(--attention)"></i>♻ 友愛接力</div>
+      </div>
+      <div id="pub-nav-readout">
+        <div class="h">前往路線</div>
+        <div class="n" id="pnav-name">—</div>
+        <div class="s">
+          <div><div class="v" id="pnav-dist">0</div><div class="k">公尺</div></div>
+          <div><div class="v" id="pnav-time">0</div><div class="k">分鐘</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pub-info">
+      <div class="pub-h"><h2>站點資訊</h2><span class="tag" id="pub-info-tag"></span></div>
+      <div id="pubInfoBody"></div>
+    </div>
+
+    <div class="pub-nearby">
+      <div class="pub-h"><h2>附近推薦</h2><span class="tag" id="pub-nearby-tag">依可靠度排序</span></div>
+      <div id="pubNearbyBody"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* =====================================================================
+   DATA MODEL  — everything driven from data, nothing hardcoded in markup
+   Coordinates are isometric grid coords (gx, gy) on the city model.
+   ===================================================================== */
+/* =====================================================================
+   ADDON — 新增功能疊加層（不改動地圖與既有函式）
+   1) 三指標嚴格風險：即時訊號 + P10/P90 分位數 + 歷史模型機率（嚴格 AND）
+   2) 站點異常 FSM：watch(30m)->suspected(60m)->notified(90m) 並主動通知
+   3) 安全鄰站調度半徑
+   4) 道路事件 ETA（不改 drawRoute）
+   5) 派遣任務值班員指派
+   全部為 DEMO 估計；模型尚未訓練，明確標示 DEMO MODEL。
+   ===================================================================== */
+var ADDON = (function(){
+  const CFG = {
+    modelProbThreshold: 0.70,
+    neighborRadiusKm: 3.0,
+    anomaly: { watch: 30, suspected: 60, notified: 90 },
+  };
+  function quantiles(mid, confidence){
+    const spread = (1 - Math.max(0.5, Math.min(0.95, confidence))) * 0.9 + 0.12;
+    return { p10: Math.max(0, mid - spread*mid), p50: mid, p90: Math.min(1, mid + spread*(1-mid)) };
+  }
+  function historicalProbability(s, direction){
+    const prof = demandService.getDemandProfile(s);
+    const trendW = prof.trend==='FAST_FALLING'?0.9 : prof.trend==='FALLING'?0.7 : prof.trend==='RISING'?0.2 : 0.4;
+    const durW = Math.min(1, imbalanceDuration(s)/90);
+    const supplyW = direction==='dock'
+      ? 1 - Math.min(1, (s.empty ?? 0)/Math.max(6, s.cap*0.25))
+      : 1 - Math.min(1, effectiveAvail(s)/Math.max(6, s.cap*0.25));
+    return Math.max(0, Math.min(1, Math.round((trendW*0.4 + durW*0.25 + supplyW*0.35)*100)/100));
+  }
+  function strictDirection(s, direction){
+    const pred = getPrediction(s);
+    const cap = Math.max(1, s.cap||1);
+    const nowSupply = direction==='dock' ? (s.empty ?? 0) : effectiveAvail(s);
+    const reserve = safeReserve(s);
+    const rtRisk = nowSupply <= reserve;
+    const mid = direction==='dock' ? pred.predictedEmptyDockRatio30 : pred.predictedAvailableRatio30;
+    const q = quantiles(mid, pred.confidence);
+    const p10Level = q.p10 * cap;
+    const quantRisk = p10Level <= reserve;
+    const histProb = historicalProbability(s, direction);
+    const histRisk = histProb >= CFG.modelProbThreshold;
+    const signals = [
+      { name: (predictionService.isMock()?'即時訊號 (DEMO)':'即時共享單車 API'), pass: rtRisk,
+        detail: '現況 '+nowSupply+' vs 安全量 '+reserve },
+      { name: '30分鐘 P10 分位數', pass: quantRisk,
+        detail: 'P10≈'+p10Level.toFixed(1)+' / P50≈'+(q.p50*cap).toFixed(1)+' / P90≈'+(q.p90*cap).toFixed(1) },
+      { name: '歷史模型機率 (DEMO MODEL)', pass: histRisk,
+        detail: (histProb*100).toFixed(0)+'% vs 門檻 '+(CFG.modelProbThreshold*100).toFixed(0)+'%' },
+    ];
+    const passed = signals.filter(x=>x.pass).length;
+    return { direction, signals, passedCount: passed, formalAlert: passed===3, quantiles:q, histProb };
+  }
+  function strictRisk(s){
+    const borrow = strictDirection(s, 'borrow');
+    const dock = strictDirection(s, 'dock');
+    return { borrow, dock, formalAny: borrow.formalAlert || dock.formalAlert };
+  }
+  function anomalyState(s){
+    const faults = s.suspectedFault ?? 0;
+    const idle = s.longestIdleMin ?? 0;
+    const highDemand = (s.importance ?? 1) >= 1.1 || s.cap >= 26;
+    if(faults <= 0 || !highDemand){
+      return { state:'normal', idle, faults, highDemand,
+        reason: faults<=0 ? '無疑似長時間停留車輛。' : '非高流量站，暫不累積型態異常。' };
+    }
+    let state='normal';
+    if(idle >= CFG.anomaly.notified) state='notified';
+    else if(idle >= CFG.anomaly.suspected) state='suspected';
+    else if(idle >= CFG.anomaly.watch) state='watch';
+    if(s.faultConfirmed) state='confirmed';
+    const labelMap = { watch:'可疑站點（觀察中）', suspected:'高度可疑（待複查）', notified:'已通知調度人員', confirmed:'已確認異常', normal:'正常' };
+    return { state, idle, faults, highDemand, label: labelMap[state],
+      reason: '高流量站卻有 '+faults+' 台車長時間停留（最長 '+fmtIdle(idle)+'）。' };
+  }
+  function isNeighbor(a, b){
+    try{ return dispatchService.km(a,b) <= CFG.neighborRadiusKm; }catch(e){ return true; }
+  }
+  function roadDelayMin(a, b){
+    if(!a||!b) return 0;
+    const dist = dispatchService.gridDist(a,b);
+    let delay = 0;
+    const crossesRiver = (typeof RIVER_CELLS!=='undefined') &&
+      [...RIVER_CELLS].some(function(k){ var p=k.split(',').map(Number);
+        return Math.abs(((a.gx+b.gx)/2)-p[0])<1 && Math.abs(((a.gy+b.gy)/2)-p[1])<1; });
+    if(crossesRiver) delay += 7;
+    if(dist >= 6) delay += 3;
+    return delay;
+  }
+  function assignCrew(mission){
+    const busy = new Set(DATA.dispatches
+      .filter(function(d){ return d.assignedCrewId && d.status!=='DONE' && d.status!=='PARTIAL'; })
+      .map(function(d){ return d.assignedCrewId; }));
+    const pool = (DATA.crew||[]).filter(function(c){ return c.status==='on' && !busy.has(c.num); });
+    const rank = function(c){ return c.role==='DRIVER'?0 : c.role==='FIELD OPS'?1 : c.role==='DISPATCH'?2 : 3; };
+    pool.sort(function(a,b){ return rank(a)-rank(b); });
+    const chosen = pool[0];
+    if(chosen){ mission.assignedCrewId=chosen.num; mission.assignedCrewName=chosen.name; }
+    else { mission.assignedCrewName='待指派'; }
+    return chosen||null;
+  }
+  function enrichStation(s){
+    s.strictRisk = strictRisk(s);
+    s.anomalyFsm = anomalyState(s);
+    if(s.anomalyFsm.state==='notified' && !s._notifiedOnce){
+      s._notifiedOnce = true;
+      setTimeout(function(){ toast('🚨 主動通知調度人員 · '+s.name+' 疑似異常已持續 '+fmtIdle(s.anomalyFsm.idle)+'，建議派員複查'); }, 300);
+    }
+  }
+  function signalRow(sig){
+    const color = sig.pass ? 'var(--critical-2)' : 'var(--normal-2)';
+    const mark = sig.pass ? '✕ 有風險' : '✓ 無風險';
+    return '<div class="trend-row"><span class="tr-l">'+sig.name+'</span>'+
+      '<span class="tr-v" style="color:'+color+'">'+mark+' · <span style="color:var(--ink-dim)">'+sig.detail+'</span></span></div>';
+  }
+  function directionStrictHtml(title, d){
+    const badge = d.formalAlert
+      ? '<span style="color:var(--critical-2);font-weight:700">正式風險 3/3</span>'
+      : '<span style="color:var(--ink-dim)">未成立（'+d.passedCount+'/3）</span>';
+    return '<div style="margin-bottom:8px"><div class="pred-tag"><b>'+title+'</b> · '+badge+'</div>'+
+      d.signals.map(signalRow).join('')+'</div>';
+  }
+  function strictRiskBlock(s){
+    const r = s.strictRisk || strictRisk(s);
+    return '<div class="sec-h">三指標嚴格風險 · STRICT 3/3 <span class="demo-pill">DEMO</span></div>'+
+      '<div class="prio-reason" style="margin-bottom:10px">即時訊號、P10/P90 分位數、歷史模型機率三者皆判定有風險，才成立正式風險（嚴格 AND）。</div>'+
+      directionStrictHtml('借車風險（無車可借）', r.borrow)+
+      directionStrictHtml('還車風險（無位可還）', r.dock);
+  }
+  function anomalyFsmBlock(s){
+    const a = s.anomalyFsm || anomalyState(s);
+    if(a.state==='normal') return '';
+    const stages = ['watch','suspected','notified'];
+    const activeIdx = a.state==='confirmed' ? 3 : stages.indexOf(a.state);
+    const nameMap = {watch:'可疑 30m',suspected:'待複查 60m',notified:'通知 90m'};
+    const dots = stages.map(function(stg,i){
+      const on = i<=activeIdx;
+      const col = on ? (stg==='notified'?'var(--critical-2)':stg==='suspected'?'var(--warning)':'var(--attention)') : 'var(--panel-line)';
+      return '<div style="flex:1;text-align:center">'+
+        '<div style="width:10px;height:10px;border-radius:50%;background:'+col+';margin:0 auto 4px"></div>'+
+        '<div style="font-size:9px;color:'+(on?'var(--offwhite)':'var(--ink-dim)')+';letter-spacing:.04em">'+nameMap[stg]+'</div></div>';
+    }).join('');
+    return '<div class="sec-h">站點異常偵測 · ANOMALY FSM <span class="demo-pill">DEMO</span></div>'+
+      '<div class="anom-banner '+((a.state==='notified'||a.state==='confirmed')?'':'confirmed')+'">'+
+      '<div class="ab-h">狀態：'+(a.label||a.state)+'</div>'+
+      '<div style="display:flex;gap:6px;margin:8px 0 6px">'+dots+'</div>'+
+      '<div class="ab-txt">'+a.reason+'<br>依滯留時間逐步升級：30 分鐘標示可疑、60 分鐘待複查、90 分鐘主動通知調度人員。</div>'+
+      '<div class="ab-note">此為站點層級供給型態偵測，非辨識特定故障車。</div></div>';
+  }
+  return {
+    CFG: CFG, enrichStation: enrichStation, strictRisk: strictRisk, anomalyState: anomalyState,
+    strictRiskBlock: strictRiskBlock, anomalyFsmBlock: anomalyFsmBlock,
+    isNeighbor: isNeighbor, roadDelayMin: roadDelayMin, assignCrew: assignCrew
+  };
+})();
+
+const DATA = {
+  stations: [
+    // NOTE: `avail` = API 帳面可借車 (kept intact for future real-API mapping).
+    //       reportedAvail mirrors avail; suspectedFault + longestIdleMin drive anomaly detection.
+    // Trend fields are TIME-WINDOWED SUPPLY CHANGES (not "actual rentals"):
+    //   delta30/delta60           = 車輛供給變化 (available) over last 30 / 60 min (negative = losing bikes)
+    //   deltaEmpty30/deltaEmpty60 = 空位變化 over last 30 / 60 min
+    //   imbalanceDuration         = 目前供需失衡已持續分鐘數 (from status feed, NOT "unhandled time")
+    {id:'0012', name:'三重捷運站',   gx:3, gy:2,  status:'warning',  issue:'疑似異常車輛', avail:8,  reportedAvail:8,  suspectedFault:2, longestIdleMin:192, empty:22, cap:30, waitMin:0,  prio:'MED',  district:'三重區', faultConfirmed:false, delta30:-3, delta60:-7, deltaEmpty30:3,  deltaEmpty60:7,  imbalanceDuration:0,  importance:1.25},
+    {id:'0027', name:'新北產業園區', gx:1, gy:5,  status:'critical', issue:'無位可還',     avail:30, reportedAvail:30, suspectedFault:0, longestIdleMin:0,   empty:0,  cap:30, waitMin:28, prio:'HIGH', district:'五股區', faultConfirmed:false, delta30:5,  delta60:11, deltaEmpty30:-5, deltaEmpty60:-11,imbalanceDuration:67, importance:1.15},
+    {id:'0041', name:'板橋車站',     gx:4, gy:6,  status:'warning',  issue:'供需失衡',     avail:4,  reportedAvail:4,  suspectedFault:0, longestIdleMin:0,   empty:22, cap:28, waitMin:18, prio:'MED',  district:'板橋區', faultConfirmed:false, delta30:-2, delta60:-5, deltaEmpty30:2,  deltaEmpty60:5,  imbalanceDuration:41, importance:1.3},
+    {id:'0055', name:'新莊幸福站',   gx:2, gy:4,  status:'warning',  issue:'車輛偏少',     avail:5,  reportedAvail:5,  suspectedFault:1, longestIdleMin:74,  empty:19, cap:26, waitMin:14, prio:'MED',  district:'新莊區', faultConfirmed:false, delta30:-2, delta60:-4, deltaEmpty30:2,  deltaEmpty60:4,  imbalanceDuration:33, importance:1.0},
+    {id:'0063', name:'新埔站',       gx:5, gy:5,  status:'normal',   issue:'供給充足',     avail:18, reportedAvail:18, suspectedFault:0, longestIdleMin:0,   empty:6,  cap:24, waitMin:0,  prio:'LOW',  district:'板橋區', faultConfirmed:false, delta30:1,  delta60:2,  deltaEmpty30:-1, deltaEmpty60:-2, imbalanceDuration:0,  importance:1.0},
+    {id:'0078', name:'府中站',       gx:5, gy:7,  status:'normal',   issue:'運作正常',     avail:12, reportedAvail:12, suspectedFault:0, longestIdleMin:0,   empty:12, cap:26, waitMin:0,  prio:'LOW',  district:'板橋區', faultConfirmed:false, delta30:0,  delta60:1,  deltaEmpty30:0,  deltaEmpty60:-1, imbalanceDuration:0,  importance:1.0},
+    {id:'0084', name:'蘆洲站',       gx:2, gy:1,  status:'warning',  issue:'尖峰需求',     avail:3,  reportedAvail:3,  suspectedFault:0, longestIdleMin:0,   empty:21, cap:24, waitMin:11, prio:'MED',  district:'蘆洲區', faultConfirmed:false, delta30:-3, delta60:-6, deltaEmpty30:3,  deltaEmpty60:6,  imbalanceDuration:22, importance:0.85},
+    {id:'0091', name:'中和環球站',   gx:6, gy:8,  status:'normal',   issue:'運作正常',     avail:15, reportedAvail:15, suspectedFault:0, longestIdleMin:0,   empty:9,  cap:24, waitMin:0,  prio:'LOW',  district:'中和區', faultConfirmed:false, delta30:1,  delta60:0,  deltaEmpty30:-1, deltaEmpty60:0,  imbalanceDuration:0,  importance:1.0},
+    {id:'0102', name:'頭前庄站',     gx:3, gy:5,  status:'normal',   issue:'運作正常',     avail:10, reportedAvail:10, suspectedFault:0, longestIdleMin:0,   empty:14, cap:24, waitMin:0,  prio:'LOW',  district:'新莊區', faultConfirmed:false, delta30:0,  delta60:-1, deltaEmpty30:0,  deltaEmpty60:1,  imbalanceDuration:0,  importance:1.0},
+  ],
+  crew: [
+    {num:'01', name:'陳志明', role:'DISPATCH', status:'on',    seed:11},
+    {num:'02', name:'李婉如', role:'ANALYST',  status:'on',    seed:27},
+    {num:'03', name:'王建國', role:'SUPPORT',  status:'on',    seed:44},
+    {num:'04', name:'林淑芬', role:'FIELD OPS',status:'break', seed:63},
+    {num:'05', name:'黃國豪', role:'DRIVER',   status:'on',    seed:82},
+    {num:'06', name:'吳孟儒', role:'RELIEF',   status:'off',   seed:19},
+  ],
+  dispatches: [
+    {id:'D-001', route:'板橋 → 新埔',  bikes:12, status:'WAITING'},
+    {id:'D-002', route:'新莊 → 幸福',  bikes:8,  status:'PROGRESS'},
+    {id:'D-003', route:'三重 → ?',     bikes:0,  status:'UNASSIGNED'},
+    {id:'D-004', route:'蘆洲 → 頭前庄',bikes:6,  status:'WAITING'},
+  ]
+};
+
+/* =====================================================================
+   SUSPECTED VEHICLE ANOMALY  +  EFFECTIVE SUPPLY
+   -------------------------------------------------------------------
+   AI 只負責「發現與預測」，不宣稱已確認故障。
+   effectiveAvail = max(0, reportedAvail - suspectedFault)
+   資料結構刻意與未來真實 API 對齊：
+     avail          — API 帳面可借車（保留原欄位）
+     reportedAvail  — 帳面可借（= avail，未來可由 API 提供）
+     suspectedFault — 疑似異常車數（由偵測模型產生）
+     longestIdleMin — 最長未出現合理狀態變化的分鐘數
+   ===================================================================== */
+
+// 有效可用車輛（供給估計）
+function effectiveAvail(s){
+  const reported = (s.reportedAvail ?? s.avail ?? 0);
+  const fault    = (s.suspectedFault ?? 0);
+  return Math.max(0, reported - fault);
+}
+// alias per spec
+function calculateEffectiveAvail(station){ return effectiveAvail(station); }
+
+// 安全庫存：至少 3 台，或站點容量的 20%
+function safeReserve(s){ return Math.max(3, Math.ceil((s.cap||0)*0.2)); }
+// 可調度數（扣除安全庫存後的有效供給）
+function dispatchable(s){ return Math.max(0, effectiveAvail(s) - safeReserve(s)); }
+
+// 疑似異常偵測：回傳 {level, reason, faults, idleMin}
+// 只產生「疑似」警示，不宣稱已確認故障。
+function detectVehicleAnomaly(s){
+  const faults = s.suspectedFault ?? 0;
+  const idle   = s.longestIdleMin ?? 0;
+  if(faults<=0){
+    return {level:'normal', faults:0, idleMin:idle, reason:''};
+  }
+  let level='normal';
+  if(idle>120) level='critical';
+  else if(idle>=60) level='warning';
+  else level='warning'; // 有疑似車但停留時間短，仍給予 warning 提示
+  return {
+    level, faults, idleMin:idle,
+    reason: `疑似 ${faults} 台車長時間停留（最長 ${fmtIdle(idle)}）`
+  };
+}
+// 以「有效供給可能高估的百分比」量化資料異常
+function supplyOverestimatePct(s){
+  const reported = (s.reportedAvail ?? s.avail ?? 0);
+  if(reported<=0) return 0;
+  return Math.round(((s.suspectedFault ?? 0)/reported)*100);
+}
+function fmtIdle(min){
+  min=Math.round(min||0);
+  if(min<60) return `${min}m`;
+  const h=Math.floor(min/60), m=min%60;
+  return `${h}h ${String(m).padStart(2,'0')}m`;
+}
+
+/* =====================================================================
+   SERVICE LAYER  (Phase 2)
+   -------------------------------------------------------------------
+   All predictive logic is isolated behind small service objects so the
+   mock implementation can later be swapped for a real backend WITHOUT
+   touching UI code. The public method signatures are the integration
+   contract:
+
+     predictionService.getStationRisk30(station) -> 0..100   [MOCK / 模擬預測]
+     predictionService.getStationRisk60(station) -> 0..100   [MOCK / 模擬預測]
+       ↑ replace body with fetch() to FastAPI -> SageMaker XGBoost endpoint.
+
+     demandService.getDemandProfile(station)     -> {delta30,delta60,trend,estimated30,estimated60}
+     priorityService.calculateDispatchPriority(station) -> {score, reason, ...}
+     dispatchService.getSourceCandidates(target) -> [{station, dist, eta, dispatchable, riskAfter}]
+     simulationService.simulateDispatch(target, source, bikes) -> {...post-dispatch projection}
+     simulationService.calculateDispatchBenefit(sim, plan) -> {score, feasible, verdict, reasons}
+   ===================================================================== */
+
+// ---- shared risk model (rule-based; NOT the model itself) -------------
+// Risk rises as EFFECTIVE supply approaches 0 relative to a comfortable buffer.
+// projectedSupply lets us reuse the same curve for now / +30 / +60 min.
+function riskFromSupply(projectedEff, cap){
+  const comfort = Math.max(6, Math.round(cap*0.25));   // supply we'd like to keep
+  const ratio = Math.min(1, Math.max(0,projectedEff)/comfort);
+  // gentler convex falloff: empty projection ~= 88%, comfortable ~= 8%
+  let risk = 88*Math.pow(1-ratio, 1.15) + 8;
+  return Math.max(4, Math.min(95, Math.round(risk)));
+}
+
+/* ===== predictionService ===== [MOCK / DEMO — rule-based, NOT a real model]
+   -------------------------------------------------------------------
+   source==='mock' means these numbers are DEMO estimates, not XGBoost.
+   Unified prediction contract (getPrediction) so the whole Decision Engine
+   consumes ONE shape. To go live, replace getPrediction() with a fetch()
+   to FastAPI -> SageMaker XGBoost that returns the SAME object; nothing
+   downstream needs to change.
+
+   getPrediction(station) -> {
+     risk30, risk60,                          // 0..1  缺車風險
+     predictedAvailableRatio30/60,            // 0..1  預測可借車 / 容量
+     predictedEmptyDockRatio30/60,            // 0..1  預測可還位 / 容量
+     confidence,                              // 0..1  預測信心 (DEMO)
+     source                                   // 'mock' | 'xgboost'
+   } */
+const predictionService = {
+  source: 'mock',   // 'mock' -> DEMO/模擬預測 ; 'xgboost' -> XGBoost Prediction
+  label(){ return this.source==='xgboost' ? 'XGBoost Prediction' : 'DEMO / MOCK 模擬預測'; },
+  isMock(){ return this.source!=='xgboost'; },
+
+  // project EFFECTIVE available bikes forward using recent supply change (demand trend)
+  _projectEff(s, minutes){
+    const eff = effectiveAvail(s);
+    const per30 = (s.delta30 ?? 0);
+    if(minutes<=30) return Math.max(0, Math.round(eff + per30*(minutes/30)));
+    return Math.max(0, Math.round(eff + per30 + (s.delta30 ?? 0)*0.7*((minutes-30)/30)));
+  },
+  // project EMPTY docks forward using recent empty-dock change
+  _projectEmpty(s, minutes){
+    const emp = (s.empty ?? 0);
+    const per30 = (s.deltaEmpty30 ?? 0);
+    if(minutes<=30) return Math.max(0, Math.round(emp + per30*(minutes/30)));
+    return Math.max(0, Math.round(emp + per30 + (s.deltaEmpty30 ?? 0)*0.7*((minutes-30)/30)));
+  },
+  // unified prediction (all stations, always returns a fallback shape)
+  getPrediction(s){
+    const cap = Math.max(1, s.cap||1);
+    const eff30 = this._projectEff(s,30), eff60 = this._projectEff(s,60);
+    const emp30 = this._projectEmpty(s,30), emp60 = this._projectEmpty(s,60);
+    // confidence (DEMO): higher when trend is consistent & station is larger
+    const trendConsistent = Math.sign(s.delta30??0)===Math.sign(s.delta60??0);
+    const conf = Math.max(0.55, Math.min(0.9, 0.62 + (trendConsistent?0.14:0) + Math.min(cap,40)/40*0.14));
+    return {
+      source: this.source,
+      risk30: riskFromSupply(eff30, cap)/100,
+      risk60: riskFromSupply(eff60, cap)/100,
+      predictedAvailableRatio30: Math.min(1, eff30/cap),
+      predictedAvailableRatio60: Math.min(1, eff60/cap),
+      predictedEmptyDockRatio30: Math.min(1, emp30/cap),
+      predictedEmptyDockRatio60: Math.min(1, emp60/cap),
+      confidence: Math.round(conf*100)/100
+    };
+  },
+  // risk of an arbitrary projected supply value (used by simulation)
+  riskOf(projEff, cap){ return riskFromSupply(projEff, cap); },
+  // legacy adapters (0..100) — kept so existing callers keep working
+  getStationRisk30(s){ return Math.round(this.getPrediction(s).risk30*100); },
+  getStationRisk60(s){ return Math.round(this.getPrediction(s).risk60*100); }
+};
+// convenience wrappers per spec
+function getStationRisk30(s){ return predictionService.getStationRisk30(s); }
+function getStationRisk60(s){ return predictionService.getStationRisk60(s); }
+// attach/refresh station.prediction (fallback for EVERY station)
+function computeStationPrediction(s){ s.prediction = predictionService.getPrediction(s); return s.prediction; }
+function getPrediction(s){ return s.prediction || computeStationPrediction(s); }
+
+/* ===== demandService ===== 供需趨勢 (time-windowed supply change) */
+const demandService = {
+  getDemandProfile(s){
+    const delta30 = (s.delta30 ?? 0);
+    const delta60 = (s.delta60 ?? 0);
+    let trend='STABLE';
+    if(delta30 <= -3 || delta60 <= -6) trend='FAST_FALLING';
+    else if(delta30 < 0 || delta60 < 0) trend='FALLING';
+    else if(delta30 > 1 || delta60 > 2) trend='RISING';
+    return {
+      delta30, delta60, trend,
+      estimated30: predictionService._projectEff(s,30),
+      estimated60: predictionService._projectEff(s,60)
+    };
+  },
+  trendLabel(trend){
+    return trend==='FAST_FALLING' ? '車輛快速流失 · 需求快速上升'
+         : trend==='FALLING'      ? '車輛供給下降 · 需求上升'
+         : trend==='RISING'       ? '車輛供給回升'
+         : '供需大致穩定';
+  }
+};
+function stationDemandProfile(s){ return demandService.getDemandProfile(s); }
+
+/* ===== priorityService ===== Decision Engine (rule-based, not "AI") */
+const priorityService = {
+  // 0..100 priority for allocating LIMITED dispatch resources.
+  calculateDispatchPriority(s){
+    const risk30 = getStationRisk30(s);
+    const risk60 = getStationRisk60(s);
+    const cap = s.cap||1;
+    const prof = demandService.getDemandProfile(s);
+    const dur = imbalanceDuration(s);              // 長時間失衡（分鐘）
+
+    // weighted components (each ~0..1)
+    const cRisk   = (risk30*0.6 + risk60*0.4)/100;                    // future risk
+    const cCap    = Math.min(cap,50)/50;                             // bigger station serves more users
+    const cUsers  = Math.min(expectedAffectedUsers(s),60)/60;         // expected affected users
+    const cTrend  = prof.trend==='FAST_FALLING'?1 : prof.trend==='FALLING'?0.6 : 0.2;
+    const cDur    = Math.min(dur,120)/120;                           // sustained imbalance
+    const cImp    = Math.min(s.importance??1, 1.4)/1.4;              // station importance
+
+    let score = 100*( cRisk*0.42 + cCap*0.14 + cUsers*0.16 + cTrend*0.12 + cDur*0.10 + cImp*0.06 );
+    score = Math.max(0, Math.min(100, Math.round(score)));
+
+    // human-readable reason (top contributing factors)
+    const bits=[];
+    if(cRisk>0.6) bits.push('未來30分鐘風險高');
+    if(cCap>0.6) bits.push('大容量站點');
+    else if(cCap<0.3) bits.push('站點規模較小');
+    if(cUsers>0.5) bits.push('高需求');
+    if(cTrend>=0.6) bits.push('持續失衡');
+    if(cDur>0.5) bits.push('長時間失衡');
+    if((s.importance??1)>1.1) bits.push('轉運要點');
+    const reason = bits.length? bits.join(' + ') : '風險與需求適中';
+    return { score, reason, risk30, risk60, trend:prof.trend, duration:dur };
+  }
+};
+function calculateDispatchPriority(s){ return priorityService.calculateDispatchPriority(s); }
+
+// 目前供需失衡已持續分鐘數（來自狀態回報，非「未處置時間」）
+function imbalanceDuration(s){ return s.imbalanceDuration ?? 0; }
+// 預估受影響使用者（規則估計）：容量 + 缺口 + 趨勢
+function expectedAffectedUsers(s){
+  const gap = Math.max(0, Math.round(s.cap*0.25) - effectiveAvail(s));
+  const trendPush = Math.max(0, -(s.delta30 ?? 0)) * 1.5;
+  return Math.round(gap*2 + trendPush + s.cap*0.15);
+}
+
+/* ===== dispatchService ===== source optimization */
+const dispatchService = {
+  gridDist(a,b){ return Math.abs(a.gx-b.gx)+Math.abs(a.gy-b.gy); },
+  km(a,b){ return this.gridDist(a,b)*0.35+0.4; },
+  baseEta(a,b){ return Math.round(this.km(a,b)*4+4); },
+  eta(a,b){
+    const base=this.baseEta(a,b);
+    if(typeof ADDON!=='undefined'){
+      try{ return base + ADDON.roadDelayMin(a,b); }catch(e){ return base; }
+    }
+    return base;
+  },
+  // candidate sources, scored by post-dispatch source risk (not distance-only)
+  getSourceCandidates(target, bikes){
+    const want = bikes || 10;
+    return DATA.stations
+      .filter(s=>s.id!==target.id && dispatchable(s)>0)
+      .map(s=>{
+        const take = Math.min(want, dispatchable(s));
+        const projEffAfter = effectiveAvail(s) - take;
+        // project source forward after losing `take` bikes, using its own trend
+        const proj30 = Math.max(0, projEffAfter + (s.delta30 ?? 0));
+        const riskAfter = predictionService.riskOf(proj30, s.cap);
+        return {
+          station:s,
+          dist:this.km(s,target),
+          eta:this.eta(s,target),
+          dispatchable:dispatchable(s),
+          take,
+          riskAfter
+        };
+      })
+      // rank: low post-dispatch source risk first, then more dispatchable, then closer
+      .sort((a,b)=> a.riskAfter-b.riskAfter || b.dispatchable-a.dispatchable || a.dist-b.dist);
+  }
+};
+function getSourceCandidates(target, bikes){ return dispatchService.getSourceCandidates(target, bikes); }
+
+/* ===== simulationService ===== post-dispatch scenario + benefit */
+const simulationService = {
+  // Project a station's effective supply after +addBikes, then 30/60 min forward.
+  _project(s, addBikes){
+    const now = Math.max(0, effectiveAvail(s) + addBikes);
+    const p30 = Math.max(0, now + (s.delta30 ?? 0));
+    const p60 = Math.max(0, now + (s.delta60 ?? 0));
+    return {now, p30, p60};
+  },
+  // minutes until projected effective supply drops back to a "high risk" threshold
+  _stableMinutes(s, addBikes){
+    const now = effectiveAvail(s)+addBikes;
+    const perMin = (s.delta30 ?? 0)/30;           // supply change per minute (usually negative)
+    const threshold = Math.max(2, Math.round(s.cap*0.12));
+    if(perMin>=0) return 120;                     // not falling -> stable (cap at 2h for display)
+    const mins = (now-threshold)/(-perMin);
+    return Math.max(0, Math.min(120, Math.round(mins)));
+  },
+  simulateDispatch(target, source, bikes){
+    const t = this._project(target, +bikes);
+    const sProj = this._project(source, -bikes);
+    return {
+      bikes,
+      targetAfterDispatch: t.now,
+      sourceAfterDispatch: sProj.now,
+      target30: t.p30, target60: t.p60,
+      source30: sProj.p30, source60: sProj.p60,
+      targetRisk30: predictionService.riskOf(t.p30, target.cap),
+      targetRisk60: predictionService.riskOf(t.p60, target.cap),
+      sourceRisk30: predictionService.riskOf(sProj.p30, source.cap),
+      sourceRisk60: predictionService.riskOf(sProj.p60, source.cap),
+      targetRiskAfter: predictionService.riskOf(t.now, target.cap),
+      estimatedStableMinutes: this._stableMinutes(target, +bikes)
+    };
+  },
+  // Benefit = target risk reduction + stability - source risk increase - dispatch cost
+  calculateDispatchBenefit(target, source, bikes){
+    const feasibleBikes = bikes<=dispatchable(source);
+    const sim = this.simulateDispatch(target, source, bikes);
+    const riskBefore = getStationRisk30(target);
+    const riskReduction = Math.max(0, riskBefore - sim.targetRisk30);   // 0..~90
+    const stability = sim.estimatedStableMinutes;                       // 0..120
+    const sourceRiskBefore = getStationRisk30(source);
+    const sourceRiskIncrease = Math.max(0, sim.sourceRisk30 - sourceRiskBefore);
+    const cost = bikes;                                                 // more bikes = more cost/effort
+
+    let score = riskReduction*1.0 + stability*0.35 - sourceRiskIncrease*1.1 - cost*0.8;
+    score = Math.round(score);
+
+    const sourceBecomesHigh = sim.sourceRisk30 >= 65;
+    const feasible = feasibleBikes && !sourceBecomesHigh;
+
+    const reasons=[];
+    if(riskReduction>=20) reasons.push(`可降低目標站 30 分鐘缺車風險（${riskBefore}% → ${sim.targetRisk30}%）`);
+    if(stability>=40) reasons.push(`預估可維持約 ${stability} 分鐘`);
+    else if(stability>0) reasons.push(`僅能短暫改善（約 ${stability} 分鐘）`);
+    if(feasibleBikes && effectiveAvail(source)-bikes>=safeReserve(source)) reasons.push('來源站仍高於安全庫存');
+    reasons.push(`ETA ${dispatchService.eta(source,target)} 分鐘`);
+    if(sourceBecomesHigh) reasons.push('⚠ 可能造成來源站缺車');
+    if(!feasibleBikes) reasons.push('⚠ 來源站可調度量不足');
+
+    let verdict = 'ok';
+    if(!feasible) verdict='blocked';
+    return { sim, score, feasible, feasibleBikes, sourceBecomesHigh, verdict, reasons,
+             riskBefore, riskReduction, stability, sourceRiskIncrease };
+  }
+};
+function simulateDispatch(target, source, bikes){ return simulationService.simulateDispatch(target, source, bikes); }
+function calculateDispatchBenefit(target, source, bikes){ return simulationService.calculateDispatchBenefit(target, source, bikes); }
+
+function riskLevelClass(r){ return r>=65?'high':r>=35?'med':'low'; }
+
+/* =====================================================================
+   INTERVENTION DECISION ENGINE  (Phase 3)
+   -------------------------------------------------------------------
+   Turns 友愛接力 (Community Relay) into a first-class intervention that
+   COMPETES with fleet dispatch. The engine answers:
+     「這個問題應該由誰解決 — 民眾（友愛接力）還是車隊？」
+
+   Key principle: low usage alone is NOT a relay trigger. A relay is only
+   recommended when there is a PREDICTED imbalance that community behaviour
+   can plausibly improve, AND relay improvement is enough (else HYBRID/FLEET).
+
+   All numbers are DEMO estimates (predictionService.source==='mock').
+   ===================================================================== */
+
+// Is the station enrolled / eligible for the community-relay activity? (DEMO flag)
+function relayActivityEligible(s){
+  // eligibility comes from activity enrolment, not from being low-usage.
+  // Demo: all managed stations are enrolled unless explicitly opted out.
+  return s.relayEnrolled !== false;
+}
+
+// Relay improvement potential (0..1): how much community behaviour could realistically help.
+// Depends on how much "room" the opposite side has (docks for RETURN, bikes for BORROW)
+// and the station's footfall (capacity as a proxy for how many users pass by).
+function relayImprovementPotential(s, direction){
+  const cap = Math.max(1, s.cap||1);
+  const footfall = Math.min(1, cap/34);                  // bigger station => more passing users
+  let room;
+  if(direction==='RETURN')      room = Math.min(1, (s.empty ?? 0)/cap);        // need docks to accept returns
+  else if(direction==='BORROW') room = Math.min(1, effectiveAvail(s)/cap);     // need bikes to lend out
+  else                          room = 0.4;
+  // realistic ceiling: relay is a soft nudge, not a truck
+  return Math.max(0, Math.min(0.6, footfall*0.5 + room*0.5)) ;
+}
+
+/* calculateRelayScore(station) -> 0..100
+   Composed (non-random) from predicted risk, imbalance duration, improvement
+   potential, capacity, current effective supply and activity eligibility. */
+function calculateRelayScore(s){
+  const pred = getPrediction(s);
+  const cap = Math.max(1, s.cap||1);
+  // determine the risk-relevant direction first
+  const dir = relayDirection(s);
+  if(dir===null) return 0;
+  const predictedRisk = dir==='RETURN' ? pred.risk30 : (1 - pred.predictedEmptyDockRatio30); // 0..1
+  const dur = Math.min(imbalanceDuration(s),120)/120;
+  const potential = relayImprovementPotential(s, dir);          // 0..0.6
+  const capScore = Math.min(cap,40)/40;
+  const supplyTight = dir==='RETURN'
+      ? 1-Math.min(1, effectiveAvail(s)/Math.max(6,cap*0.25))
+      : 1-Math.min(1, (s.empty??0)/Math.max(6,cap*0.25));
+  const eligible = relayActivityEligible(s) ? 1 : 0;
+
+  let score = 100*( predictedRisk*0.40 + supplyTight*0.18 + potential*0.20 + dur*0.10 + capScore*0.07 + eligible*0.05 );
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+// Which way should relay push? RETURN (encourage returns) if shortage risk,
+// BORROW (encourage borrowing) if full-dock risk, else null.
+function relayDirection(s){
+  const pred = getPrediction(s);
+  const shortageRisk = pred.risk30;                                              // low predicted available
+  const fullRisk = Math.min(0.95, riskFromSupply((s.cap||1)*pred.predictedEmptyDockRatio30, s.cap)/100); // low predicted empty docks
+  const SH=0.55, FU=0.55;
+  if(shortageRisk>=SH && fullRisk>=FU) return 'BOTH';
+  if(shortageRisk>=SH) return 'RETURN';
+  if(fullRisk>=FU)     return 'BORROW';
+  return null;
+}
+
+/* decideIntervention(station) -> {type,direction,score,reason,expectedImpact,confidence}
+   type: 'RELAY' | 'FLEET' | 'HYBRID' | 'NONE'
+   Every station gets a valid object (fallback = NONE). */
+function decideIntervention(s){
+  const pred = getPrediction(s);
+  const risk30 = pred.risk30;                                  // 0..1 shortage risk
+  const fullRisk30 = Math.min(0.95, riskFromSupply((s.cap||1)*pred.predictedEmptyDockRatio30, s.cap)/100); // 0..0.95 full-dock risk
+  const dir = relayDirection(s);
+  const dur = imbalanceDuration(s);
+  const conf = pred.confidence;
+
+  // no meaningful current/future risk -> NONE (do NOT flag naturally-quiet stations)
+  const peakRisk = Math.max(risk30, fullRisk30);
+  if(peakRisk < 0.5 && dir===null){
+    return {type:'NONE', direction:null, score:0, reason:'目前與未來 30 分鐘皆無明顯供需風險。',
+            expectedImpact:0, confidence:conf, relayScore:0, fleetRisk:Math.round(peakRisk*100)};
+  }
+
+  const relayScore = calculateRelayScore(s);
+  const effDir = dir==='BOTH' ? (risk30>=fullRisk30?'RETURN':'BORROW') : dir;
+  const potential = effDir? relayImprovementPotential(s, effDir) : 0;   // 0..0.6
+  const peakPct = Math.round(peakRisk*100);
+  const relayImpact = Math.round(peakPct * potential);                  // pp it could cut (DEMO)
+
+  // "room" = absolute capacity for community behaviour to help in the risk direction.
+  //   RETURN needs empty docks (so people can return); BORROW needs bikes (so people can borrow).
+  const cap = Math.max(1, s.cap||1);
+  const room = effDir==='RETURN' ? (s.empty ?? 0)
+             : effDir==='BORROW' ? effectiveAvail(s)
+             : 0;
+  const roomRatio = room/cap;
+  const roomEnough = room>=6 && roomRatio>=0.30;      // enough physical room for a relay nudge
+  // "severe" only when risk is extreme AND community behaviour has little room to help
+  const severe = peakRisk>=0.88 && !roomEnough;
+  const longImbalance = dur>=60;
+
+  let type, reason, expectedImpact;
+  if(peakRisk<0.5 && dir===null){
+    type='NONE'; expectedImpact=0;
+    reason='風險偏低，暫不需要主動介入。';
+  } else if(severe || longImbalance || !roomEnough){
+    // extreme risk, sustained imbalance, or no physical room for community behaviour -> fleet
+    // BUT if there IS some room, keep relay running alongside (HYBRID) rather than pure FLEET.
+    if(roomEnough && !severe){
+      type='HYBRID'; expectedImpact=relayImpact;
+      reason=`預測風險 ${peakPct}%，友愛接力可先降低部分風險，但可能不足，建議同時準備車隊。`;
+    } else {
+      type='FLEET'; expectedImpact=0;
+      reason=`預測風險 ${peakPct}%，${!roomEnough?'站點缺乏可供民眾行為改善的空間':'失衡嚴重且持續'}，預估友愛接力改善不足，建議車隊調度。`;
+    }
+  } else if(roomEnough && peakRisk<0.86){
+    type='RELAY'; expectedImpact=relayImpact;
+    reason=`預測風險 ${peakPct}%，站點仍有${effDir==='BORROW'?'足夠車輛':'足夠空位'}，民眾行為具改善空間，優先採用友愛接力。`;
+  } else {
+    type='HYBRID'; expectedImpact=relayImpact;
+    reason=`預測風險 ${peakPct}%，友愛接力可先降低部分風險，但可能不足，建議同時準備車隊。`;
+  }
+
+  return {
+    type,
+    direction: type==='FLEET' ? null : (dir==='BOTH'? (risk30>=fullRisk30?'RETURN':'BORROW') : dir),
+    score: relayScore,
+    reason,
+    expectedImpact,                       // percentage-point risk reduction (DEMO)
+    confidence: conf,
+    relayScore,
+    fleetRisk: Math.round(peakRisk*100),
+    peakRiskPct: Math.round(peakRisk*100)
+  };
+}
+
+// refresh derived AI fields on a station (prediction + intervention). Always safe.
+function refreshStationAI(s){
+  computeStationPrediction(s);
+  s.relayScore = calculateRelayScore(s);
+  s.relayDirection = relayDirection(s);
+  s.intervention = decideIntervention(s);
+  s.expectedImpact = s.intervention.expectedImpact;
+  if(typeof ADDON!=='undefined'){
+    try{ ADDON.enrichStation(s); }catch(e){}
+  }
+  return s;
+}
+function refreshAllAI(){ DATA.stations.forEach(refreshStationAI); }
+
+// human labels for intervention
+function interventionLabel(t){
+  return t==='RELAY'?'友愛接力': t==='FLEET'?'車隊調度': t==='HYBRID'?'混合策略':'正常';
+}
+function interventionTag(t){
+  return t==='RELAY'?'RELAY': t==='FLEET'?'FLEET': t==='HYBRID'?'HYBRID':'NONE';
+}
+function directionLabel(d){
+  return d==='RETURN'?'建議還車到此站': d==='BORROW'?'建議從此站借車': d==='BOTH'?'可借可還皆有助益':'';
+}
+
+// derive priority "calls" from stations that need attention.
+// Now sorted by Decision-Engine priorityScore (not just HIGH/MED/LOW).
+function buildCalls(){
+  refreshAllAI();   // ensure every station has fresh prediction + intervention
+  return DATA.stations
+    // include anything with a status issue, a suspected fault, OR a predicted intervention
+    .filter(s => s.status !== 'normal' || (s.suspectedFault ?? 0) > 0 || (s.intervention && s.intervention.type!=='NONE'))
+    .map(s => {
+      const anom = detectVehicleAnomaly(s);
+      const pr = calculateDispatchPriority(s);
+      const iv = s.intervention || decideIntervention(s);
+      // intervention urgency nudges priority (only when there IS an intervention)
+      const urgency = iv.type==='FLEET'?10 : iv.type==='HYBRID'?7 : iv.type==='RELAY'?4 : 0;
+      const priorityScore = Math.min(100, pr.score + urgency);
+      return {
+        stationId:s.id, name:s.name, issue:s.issue, waitMin:s.waitMin,
+        prio:s.prio, status:s.status,
+        duration: `${Math.round(s.waitMin*0.7)} MIN 前回報`,
+        anomaly: anom,
+        reportedAvail: (s.reportedAvail ?? s.avail),
+        effectiveAvail: effectiveAvail(s),
+        suspectedFault: (s.suspectedFault ?? 0),
+        longestIdleMin: (s.longestIdleMin ?? 0),
+        // phase-2 metrics
+        risk30: pr.risk30,
+        priorityScore,
+        priorityReason: pr.reason,
+        imbalanceDuration: imbalanceDuration(s),
+        // phase-3 intervention
+        intervention: iv
+      };
+    })
+    .sort((a,b)=> b.priorityScore - a.priorityScore || b.risk30 - a.risk30);
+}
+
+const STATE = {
+  view:'operations',        // 'operations' | 'public'
+  selectedId:null,          // ops selected station
+  detailMode:'detail',      // ops right panel: 'detail' | 'reco'
+  routeAnim:0, calls:buildCalls(),
+  // public view state
+  pubSelectedId:null,
+  pubNav:null,              // {from, to, meters, min} mock navigation
+  pubRouteAnim:0
+};
+
+// mock user location (isometric grid coords) — used for public navigation
+const USER_LOC = { gx:3.2, gy:3.4 };
+
+/* =====================================================================
+   ISOMETRIC CITY MAP  (canvas)
+   ===================================================================== */
+const canvas = document.getElementById('mapCanvas');
+const ctx = canvas.getContext('2d');
+let W=0,H=0, DPR=Math.min(window.devicePixelRatio||1,2);
+let ORIGIN={x:0,y:0};
+const TILE = {w:74, h:37};       // iso tile footprint
+const GRID = {cols:8, rows:10};
+
+function resize(){
+  const r = canvas.parentElement.getBoundingClientRect();
+  W=r.width; H=r.height;
+  canvas.width=W*DPR; canvas.height=H*DPR;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  // center the iso grid
+  ORIGIN.x = W/2 - 10;
+  ORIGIN.y = H/2 - (GRID.rows*TILE.h)/2 + 20;
+}
+function iso(gx,gy){
+  return {
+    x: ORIGIN.x + (gx-gy)*TILE.w/2,
+    y: ORIGIN.y + (gx+gy)*TILE.h/2
+  };
+}
+
+// deterministic pseudo-random per tile for building heights / roads
+function rnd(a,b){ const s=Math.sin(a*127.1+b*311.7)*43758.5453; return s-Math.floor(s); }
+
+// map cell types
+const RIVER_CELLS = new Set(['7,0','7,1','6,2','6,3','5,3','5,4','4,4','4,5','7,2']);
+const ROAD_ROWS = [3,7]; const ROAD_COLS=[1,5];
+function cellType(gx,gy){
+  if(RIVER_CELLS.has(gx+','+gy)) return 'river';
+  if(ROAD_ROWS.includes(gy)||ROAD_COLS.includes(gx)) return 'road';
+  return 'block';
+}
+
+function drawTileTop(gx,gy,fill,stroke){
+  const p=iso(gx,gy);
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y);
+  ctx.lineTo(p.x+TILE.w/2, p.y+TILE.h/2);
+  ctx.lineTo(p.x, p.y+TILE.h);
+  ctx.lineTo(p.x-TILE.w/2, p.y+TILE.h/2);
+  ctx.closePath();
+  ctx.fillStyle=fill; ctx.fill();
+  if(stroke){ ctx.strokeStyle=stroke; ctx.lineWidth=1; ctx.stroke(); }
+}
+
+function drawBuilding(gx,gy){
+  const p=iso(gx,gy);
+  const cx=p.x, cyTop=p.y;
+  const seed=rnd(gx,gy);
+  const seed2=rnd(gy,gx);
+  const h = 14 + seed*40;         // building height
+  const inset = 9 + seed2*7;      // footprint inset
+  const w = TILE.w/2 - inset;
+  const d = TILE.h/2 - inset*0.5;
+  const topY = cyTop + TILE.h/2 - h;
+  // walls
+  const leftFace='#232830', rightFace='#1b1f26', roof='#2e343d';
+  // left wall
+  ctx.beginPath();
+  ctx.moveTo(cx-w, cyTop+TILE.h/2 - d + h - h);
+  // recompute cleaner:
+  const bx=cx, byBase=cyTop+TILE.h/2;
+  const tl={x:bx-w, y:byBase-d}, tr={x:bx+w,y:byBase-d}, bmid={x:bx,y:byBase+d? byBase - d:byBase};
+  // Simpler box: base diamond center at (bx,byBase)
+  const topOff=h;
+  const bTop={x:bx, y:byBase-d-topOff}, bRight={x:bx+w,y:byBase-topOff}, bBot={x:bx,y:byBase+d-topOff}, bLeft={x:bx-w,y:byBase-topOff};
+  const gTop={x:bx, y:byBase-d}, gRight={x:bx+w,y:byBase}, gBot={x:bx,y:byBase+d}, gLeft={x:bx-w,y:byBase};
+  // left face
+  ctx.beginPath();
+  ctx.moveTo(bLeft.x,bLeft.y);ctx.lineTo(bBot.x,bBot.y);ctx.lineTo(gBot.x,gBot.y);ctx.lineTo(gLeft.x,gLeft.y);ctx.closePath();
+  ctx.fillStyle=leftFace;ctx.fill();
+  // right face
+  ctx.beginPath();
+  ctx.moveTo(bBot.x,bBot.y);ctx.lineTo(bRight.x,bRight.y);ctx.lineTo(gRight.x,gRight.y);ctx.lineTo(gBot.x,gBot.y);ctx.closePath();
+  ctx.fillStyle=rightFace;ctx.fill();
+  // roof
+  ctx.beginPath();
+  ctx.moveTo(bTop.x,bTop.y);ctx.lineTo(bRight.x,bRight.y);ctx.lineTo(bBot.x,bBot.y);ctx.lineTo(bLeft.x,bLeft.y);ctx.closePath();
+  ctx.fillStyle=roof;ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,.35)';ctx.lineWidth=1;ctx.stroke();
+  // faint window line on right face
+  if(seed>0.4){
+    ctx.strokeStyle='rgba(183,173,153,.06)';
+    ctx.beginPath();
+    ctx.moveTo(bBot.x,bBot.y-4);ctx.lineTo(bRight.x,bRight.y-4);ctx.stroke();
+  }
+}
+
+function drawGround(){
+  // base ground tiles back-to-front
+  for(let gy=0; gy<GRID.rows; gy++){
+    for(let gx=0; gx<GRID.cols; gx++){
+      const t=cellType(gx,gy);
+      let fill='#1a1e25';
+      if(t==='river') fill='#1e2b33';
+      else if(t==='road') fill='#20242b';
+      else fill = (gx+gy)%2? '#181c22':'#1b1f26';
+      drawTileTop(gx,gy,fill,'rgba(0,0,0,.25)');
+      // road markings
+      if(t==='road'){
+        const p=iso(gx,gy);
+        ctx.strokeStyle='rgba(183,173,153,.10)';
+        ctx.setLineDash([4,5]);
+        ctx.beginPath();ctx.moveTo(p.x-TILE.w/4,p.y+TILE.h*0.75);ctx.lineTo(p.x+TILE.w/4,p.y+TILE.h*0.25);ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      // river ripple
+      if(t==='river'){
+        const p=iso(gx,gy);
+        ctx.strokeStyle='rgba(120,150,160,.10)';
+        ctx.beginPath();ctx.moveTo(p.x-10,p.y+TILE.h/2);ctx.quadraticCurveTo(p.x,p.y+TILE.h/2-4,p.x+10,p.y+TILE.h/2);ctx.stroke();
+      }
+    }
+  }
+  // bridge across river (a lighter deck between land cells)
+  const bridges=[['6,2','5,3'],['5,4','4,5']];
+  ctx.strokeStyle='rgba(183,173,153,.28)';ctx.lineWidth=6;
+  bridges.forEach(([a,b])=>{
+    const [ax,ay]=a.split(',').map(Number),[bx,by]=b.split(',').map(Number);
+    const pa=iso(ax,ay),pb=iso(bx,by);
+    ctx.beginPath();ctx.moveTo(pa.x,pa.y+TILE.h/2);ctx.lineTo(pb.x,pb.y+TILE.h/2);ctx.stroke();
+  });
+  ctx.lineWidth=1;
+}
+
+function drawBuildings(){
+  for(let gy=0; gy<GRID.rows; gy++){
+    for(let gx=0; gx<GRID.cols; gx++){
+      const t=cellType(gx,gy);
+      if(t==='block'){
+        // skip cells occupied by a station (draw a plaza there)
+        const occ=DATA.stations.some(s=>s.gx===gx&&s.gy===gy);
+        if(occ) continue;
+        if(rnd(gx*3.1,gy*1.7)>0.28) drawBuilding(gx,gy);
+      }
+    }
+  }
+}
+
+function statusColor(st){
+  return st==='critical'?'#b23c34': st==='warning'?'#c07b39':'#6f8f5f';
+}
+// Operations marker color reflects the AI INTERVENTION type (fleet/relay/hybrid/normal)
+function interventionColor(s){
+  const t=(s.intervention&&s.intervention.type)||'NONE';
+  return t==='FLEET'?'#b23c34': t==='HYBRID'?'#c07b39': t==='RELAY'?'#c2a63c':'#6f8f5f';
+}
+function interventionGlyph(t){
+  return t==='FLEET'?'!' : t==='RELAY'?'♻' : t==='HYBRID'?'◑' : '';
+}
+
+let pulse=0;
+function drawMarker(s){
+  const p=iso(s.gx,s.gy);
+  const baseY=p.y+TILE.h/2;
+  const selected = STATE.selectedId===s.id;
+  const ivType=(s.intervention&&s.intervention.type)||'NONE';
+  const col=interventionColor(s);
+  const big = ivType==='FLEET' || s.status==='critical' || selected;
+  const r = big?12:7;
+  // pole shadow on ground
+  ctx.fillStyle='rgba(0,0,0,.35)';
+  ctx.beginPath();ctx.ellipse(p.x,baseY,10,4,0,0,Math.PI*2);ctx.fill();
+
+  // pulse ring for fleet-intervention / critical / selected
+  if(ivType==='FLEET' || s.status==='critical' || selected){
+    const pr = r + 6 + Math.sin(pulse)*6 + 6;
+    ctx.strokeStyle = selected? 'rgba(183,173,153,'+(0.5-0.4*Math.abs(Math.sin(pulse)))+')' : 'rgba(178,60,52,'+(0.5-0.4*Math.abs(Math.sin(pulse)))+')';
+    ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(p.x,baseY-28,pr,0,Math.PI*2);ctx.stroke();
+  }
+
+  const pinY = baseY-28;
+  // pin stem
+  ctx.strokeStyle='rgba(0,0,0,.5)';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(p.x,baseY);ctx.lineTo(p.x,pinY);ctx.stroke();
+  // pin teardrop
+  ctx.beginPath();
+  ctx.arc(p.x,pinY,r,0,Math.PI*2);
+  ctx.fillStyle = selected? '#d8cdb4' : col;
+  ctx.fill();
+  ctx.strokeStyle = selected? '#fff':'rgba(0,0,0,.6)';ctx.lineWidth = selected?2:1.5;ctx.stroke();
+  // point
+  ctx.beginPath();ctx.moveTo(p.x-r*0.5,pinY+r*0.7);ctx.lineTo(p.x,pinY+r+5);ctx.lineTo(p.x+r*0.5,pinY+r*0.7);ctx.closePath();ctx.fillStyle=ctx.fillStyle;ctx.fill();
+  // glyph reflects intervention type (fleet ! / relay ♻ / hybrid ◑)
+  const glyph=interventionGlyph(ivType);
+  if(selected){
+    ctx.fillStyle='#16191f';ctx.font='bold 11px Oswald';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('◆',p.x,pinY);
+  } else if(glyph){
+    ctx.fillStyle = ivType==='RELAY'||ivType==='HYBRID' ? '#16191f' : '#fff';
+    ctx.font='bold 12px Oswald';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(glyph,p.x,pinY);
+  }
+  // label
+  ctx.font='11px "Noto Sans TC"';ctx.textAlign='center';ctx.textBaseline='top';
+  const label=s.name;
+  const tw=ctx.measureText(label).width;
+  ctx.fillStyle='rgba(18,21,26,.78)';
+  ctx.fillRect(p.x-tw/2-5,pinY+r+7,tw+10,15);
+  ctx.fillStyle = selected? '#e8e2d5' : '#b7ad99';
+  ctx.fillText(label,p.x,pinY+r+9);
+}
+
+// dispatch route drawn from source station -> target (selected) station
+let ROUTE=null; // {from:station, to:station, bikes, min, km}
+function drawRoute(){
+  if(!ROUTE) return;
+  const a=iso(ROUTE.from.gx,ROUTE.from.gy), b=iso(ROUTE.to.gx,ROUTE.to.gy);
+  const ax=a.x, ay=a.y+TILE.h/2-28, bx=b.x, by=b.y+TILE.h/2-28;
+  const mx=(ax+bx)/2, my=Math.min(ay,by)-46;
+  const t=Math.min(STATE.routeAnim,1);
+  // sample quadratic bezier up to t
+  ctx.strokeStyle='rgba(178,60,52,.9)';ctx.lineWidth=3;ctx.setLineDash([7,6]);ctx.lineDashOffset=-pulse*6;
+  ctx.beginPath();ctx.moveTo(ax,ay);
+  const steps=40;
+  for(let i=1;i<=steps*t;i++){
+    const u=i/steps;
+    const x=(1-u)*(1-u)*ax+2*(1-u)*u*mx+u*u*bx;
+    const y=(1-u)*(1-u)*ay+2*(1-u)*u*my+u*u*by;
+    ctx.lineTo(x,y);
+  }
+  ctx.stroke();ctx.setLineDash([]);
+  // moving bike token along route
+  if(t>=1){
+    const u=(pulse*0.12)%1;
+    const x=(1-u)*(1-u)*ax+2*(1-u)*u*mx+u*u*bx;
+    const y=(1-u)*(1-u)*ay+2*(1-u)*u*my+u*u*by;
+    ctx.fillStyle='#e8e2d5';ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#b23c34';ctx.lineWidth=1.5;ctx.stroke();
+  }
+  // endpoints
+  [[ax,ay,'#c07b39','SOURCE'],[bx,by,'#b23c34','TARGET']].forEach(([x,y,c,tag])=>{
+    ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#e8e2d5';ctx.font='700 9px Oswald';ctx.textAlign='center';
+    ctx.fillText(tag,x,y-12);
+  });
+}
+
+function render(){
+  ctx.clearRect(0,0,W,H);
+  drawGround();
+  drawBuildings();
+  // markers sorted back-to-front
+  const sorted=[...DATA.stations].sort((a,b)=>(a.gx+a.gy)-(b.gx+b.gy));
+  sorted.forEach(drawMarker);
+  drawRoute();
+}
+
+function loop(){
+  pulse+=0.06;
+  if(ROUTE && STATE.routeAnim<1) STATE.routeAnim=Math.min(1,STATE.routeAnim+0.04);
+  if(STATE.pubNav && STATE.pubRouteAnim<1) STATE.pubRouteAnim=Math.min(1,STATE.pubRouteAnim+0.04);
+  if(STATE.view==='operations'){ render(); }
+  else { pubRenderMap(); }
+  requestAnimationFrame(loop);
+}
+
+// click detection on markers
+canvas.addEventListener('click',e=>{
+  const r=canvas.getBoundingClientRect();
+  const mx=e.clientX-r.left, my=e.clientY-r.top;
+  let hit=null,best=1e9;
+  DATA.stations.forEach(s=>{
+    const p=iso(s.gx,s.gy);const px=p.x,py=p.y+TILE.h/2-28;
+    const d=Math.hypot(mx-px,my-py);
+    if(d<20&&d<best){best=d;hit=s;}
+  });
+  if(hit){ selectStation(hit.id); }
+});
+
+/* =====================================================================
+   PANEL RENDERING
+   ===================================================================== */
+function st(id){ return DATA.stations.find(s=>s.id===id); }
+
+function renderCalls(){
+  const list=document.getElementById('calls-list');
+  list.innerHTML='';
+  STATE.calls.forEach(c=>{
+    const div=document.createElement('div');
+    const hasAnom = c.suspectedFault>0;
+    div.className='call'+(STATE.selectedId===c.stationId?' selected':'')+(hasAnom?' anomaly':'');
+    div.onclick=()=>selectStation(c.stationId);
+    const pinClass = c.status==='critical'?'pin-critical':c.status==='warning'?'pin-warning':'pin-normal';
+    const rc = riskLevelClass(c.risk30);
+    const durTxt = c.imbalanceDuration>0 ? fmtIdle(c.imbalanceDuration)
+                  : c.longestIdleMin>0 ? fmtIdle(c.longestIdleMin) : '—';
+    const longImb = c.imbalanceDuration>=60;
+    const metricsRow=`
+        <div class="call-metrics">
+          <div class="cm"><span class="cml">RISK</span><span class="cmv risk-${rc}">${c.risk30}%</span></div>
+          <div class="cm"><span class="cml">${longImb?'長時間失衡':'DURATION'}</span><span class="cmv ${longImb?'imb':''}">${durTxt}</span></div>
+          <div class="cm"><span class="cml">PRIORITY</span><span class="cmv prio-score">${c.priorityScore}</span></div>
+        </div>`;
+    const iv=c.intervention||{type:'NONE'};
+    const ivRow = iv.type==='NONE' ? '' : `
+        <div class="call-iv iv-${iv.type}">
+          <span class="ivt">${interventionTag(iv.type)}</span>
+          <span class="ivl">建議：${interventionLabel(iv.type)}${iv.direction?' · '+directionLabel(iv.direction):''}</span>
+        </div>`;
+    if(hasAnom){
+      const s=st(c.stationId);
+      const confirmed = s && s.faultConfirmed;
+      div.innerHTML=`
+        <div class="row1">
+          <span class="anom-flag">🚨</span>
+          <span class="name">${c.name}</span>
+          <span class="prio prio-${c.prio}">${c.prio}</span>
+        </div>
+        <div class="issue anom-issue">${confirmed?'已確認異常車輛':'疑似異常車輛'}</div>
+        <div class="anom-grid">
+          <div><span class="al">帳面車輛</span><span class="av">${c.reportedAvail}</span></div>
+          <div><span class="al">${confirmed?'已確認':'疑似異常'}</span><span class="av bad">${c.suspectedFault}</span></div>
+          <div><span class="al">有效供給</span><span class="av good">${c.effectiveAvail}</span></div>
+          <div><span class="al">最長停留</span><span class="av">${fmtIdle(c.longestIdleMin)}</span></div>
+        </div>
+        ${metricsRow}${ivRow}`;
+    } else {
+      div.innerHTML=`
+        <div class="row1">
+          <span class="pin ${pinClass}"></span>
+          <span class="name">${c.name}</span>
+          <span class="prio prio-${c.prio}">${c.prio}</span>
+        </div>
+        <div class="issue">${c.issue}</div>
+        ${metricsRow}${ivRow}`;
+    }
+    list.appendChild(div);
+  });
+  document.getElementById('calls-count').textContent=STATE.calls.length;
+}
+
+function renderDuty(){
+  const list=document.getElementById('duty-list');
+  list.innerHTML='';
+  let on=0;
+  DATA.crew.forEach(c=>{
+    if(c.status==='on')on++;
+    const el=document.createElement('div');
+    el.className='crew '+c.status;
+    const statTxt = c.status==='on'?'ON DUTY':c.status==='break'?'ON BREAK':'OFF DUTY';
+    el.innerHTML=`
+      <span class="num">${c.num}</span>
+      <div class="portrait">${portraitSVG(c.seed,c.status)}</div>
+      <span class="cname">${c.name}</span>
+      <span class="role">${c.role}</span>
+      <span class="cstat ${c.status}"><i></i>${statTxt}</span>`;
+    list.appendChild(el);
+  });
+  document.getElementById('duty-count').textContent=DATA.crew.length;
+  document.getElementById('ts-duty').textContent=on;
+}
+
+// generated monochrome graphic-novel style portrait (not a real photo)
+function portraitSVG(seed,status){
+  const g = status==='off'? '#6f6a60' : '#b7ad99';
+  const bg = '#14161b';
+  const faceH = 20+ (seed%9);
+  return `<svg width="44" height="44" viewBox="0 0 44 44">
+    <rect width="44" height="44" fill="${bg}"/>
+    <g fill="none" stroke="${g}" stroke-width="1.4" opacity="0.9">
+      <circle cx="22" cy="17" r="8.5"/>
+      <path d="M8 44 C8 32, 14 28, 22 28 C30 28, 36 32, 36 44"/>
+      <path d="M14 15 Q22 8 30 15"/>
+    </g>
+    <rect x="0" y="0" width="44" height="44" fill="url(#hatch${seed})" opacity="0.08"/>
+    <defs><pattern id="hatch${seed}" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="4" stroke="${g}" stroke-width="1"/></pattern></defs>
+  </svg>`;
+}
+
+function renderDispatch(){
+  const list=document.getElementById('dispatch-list');
+  list.innerHTML='';
+  let active=0;
+  DATA.dispatches.forEach(d=>{
+    if(d.status!=='DONE' && d.status!=='PARTIAL')active++;
+    const el=document.createElement('div');
+    el.className='mission';
+    const bikeTxt = d.status==='UNASSIGNED'? '待指派' : d.bikes+' 台';
+    const cls = d.status; // includes DISPATCHING/TRANSIT/ARRIVED/PARTIAL/DONE/WAITING/PROGRESS/UNASSIGNED
+    const lbl = d.status==='PROGRESS'?'IN PROGRESS':lifecycleLabel(d.status);
+    const riskTxt = (d._staged && (d.status==='PARTIAL'||d.status==='DONE'))
+      ? `<small>風險 ${d.riskBefore}% → ${d.riskAfter}%</small>` : '';
+    const crewTxt = d.assignedCrewName ? `<small>值班員：${d.assignedCrewName}</small>` : '';
+    el.innerHTML=`
+      <span class="mid">#${d.id}</span>
+      <span class="mroute">${d.route}<small>${bikeTxt}</small>${crewTxt}${riskTxt}</span>
+      <span class="mstat ${cls}">${lbl}</span>`;
+    list.appendChild(el);
+  });
+  document.getElementById('disp-count').textContent=active;
+  document.getElementById('ts-disp').textContent=active;
+}
+
+/* ---- RIGHT PANEL: incident detail ---- */
+function selectStation(id){
+  STATE.selectedId=id;
+  STATE.detailMode='detail';
+  ROUTE=null; STATE.routeAnim=0; PLAN=null; RELAY=null;
+  document.getElementById('route-readout').classList.remove('on');
+  renderCalls();
+  renderRight();
+}
+
+function renderRight(){
+  const s=st(STATE.selectedId);
+  const body=document.getElementById('right-body');
+  const title=document.getElementById('right-title');
+  if(!s){
+    title.textContent='Incident Details';
+    body.innerHTML=`<div class="idet" style="color:var(--ink-dim);text-align:center;padding-top:40px">
+      <div class="label" style="font-size:12px;letter-spacing:.2em">NO INCIDENT SELECTED</div>
+      <div style="margin-top:10px;font-size:12px">從左側 PRIORITY CALLS 或地圖選擇一個站點</div></div>`;
+    return;
+  }
+  if(STATE.detailMode==='reco'){ renderReco(s); return; }
+  if(STATE.detailMode==='relay'){ renderRelayReco(s); return; }
+  title.textContent='Incident Details';
+  const reported = (s.reportedAvail ?? s.avail);
+  const fault = (s.suspectedFault ?? 0);
+  const eff = effectiveAvail(s);
+  const anom = detectVehicleAnomaly(s);
+  const confirmed = !!s.faultConfirmed;
+  const sbClass = s.status==='critical'?'sb-critical':s.status==='warning'?'sb-warning':'sb-normal';
+  const statusTxt = s.status==='critical'? (s.avail===0?'NO BIKE AVAILABLE':'NO DOCK AVAILABLE')
+                  : fault>0 ? 'SUSPECTED VEHICLE ANOMALY'
+                  : s.status==='warning'? 'SUPPLY IMBALANCE' : 'OPERATING NORMALLY';
+
+  // phase-2: prediction + trend + priority
+  const risk30=getStationRisk30(s), risk60=getStationRisk60(s);
+  const prof=stationDemandProfile(s);
+  const pr=calculateDispatchPriority(s);
+  const imb=imbalanceDuration(s);
+  const predBlock=`
+      <div class="sec-h">Forecast · ${predictionService.label()}</div>
+      <div class="stat-grid supply3">
+        <div class="cell"><div class="n risk-${riskLevelClass(risk30)}">${risk30}%</div><div class="k">30min 風險</div></div>
+        <div class="cell"><div class="n risk-${riskLevelClass(risk60)}">${risk60}%</div><div class="k">60min 風險</div></div>
+        <div class="cell"><div class="n" style="color:var(--beige)">${pr.score}</div><div class="k">Priority</div></div>
+      </div>
+      <div class="trend-row">
+        <span class="tr-l">供需趨勢</span>
+        <span class="tr-v trend-${prof.trend}">${demandService.trendLabel(prof.trend)} · 30m ${prof.delta30} / 60m ${prof.delta60}</span>
+      </div>
+      ${imb>=60?`<div class="imb-row">⏱ 長時間失衡 · 已持續 ${fmtIdle(imb)}</div>`:''}
+      <div class="prio-reason">Decision Engine · ${pr.reason}</div>`;
+
+  // phase-3: AI intervention decision (core demo block)
+  const iv = decideIntervention(s);
+  const pred = getPrediction(s);
+  const confPct = Math.round(pred.confidence*100);
+  const ivBlock = `
+      <div class="sec-h">AI Intervention Decision</div>
+      <div class="iv-decision iv-b-${iv.type}">
+        <div class="ivd-head">
+          <span class="ivd-badge iv-${iv.type}">${interventionTag(iv.type)}</span>
+          <span class="ivd-title">${interventionLabel(iv.type)}${iv.direction?' · '+directionLabel(iv.direction):''}</span>
+          <span class="ivd-demo">DEMO</span>
+        </div>
+        <div class="ivd-grid">
+          <div><span class="k">30min 風險</span><span class="v risk-${riskLevelClass(iv.fleetRisk)}">${iv.fleetRisk}%</span></div>
+          <div><span class="k">預估改善 (EST.)</span><span class="v ${iv.expectedImpact>0?'good':''}">${iv.expectedImpact>0?'-'+iv.expectedImpact+'%':'—'}</span></div>
+          <div><span class="k">預測信心 (DEMO)</span><span class="v">${confPct}%</span></div>
+          <div><span class="k">Fallback</span><span class="v">${iv.type==='RELAY'?'車隊調度':iv.type==='HYBRID'?'升級車隊':iv.type==='FLEET'?'—':'—'}</span></div>
+        </div>
+        <div class="ivd-reason">${iv.reason}</div>
+        <div class="ivd-src">Prediction Engine: ${predictionService.label()}</div>
+      </div>`;
+
+  const anomBannerHtml = fault>0 ? `
+      <div class="anom-banner ${confirmed?'confirmed':''}">
+        <div class="ab-h">⚠ ${confirmed?'CONFIRMED SUPPLY ANOMALY':'SUPPLY DATA ANOMALY'}</div>
+        <div class="ab-txt">
+          帳面顯示 <b>${reported}</b> 台車，其中 <b class="bad">${fault}</b> 台長時間未出現合理狀態變化
+          （最長停留 ${fmtIdle(s.longestIdleMin)}）。<br>
+          系統${confirmed?'已將其排除，':'暫以'} <b class="good">${eff}</b> 台作為有效供給估計，可能高估約 ${supplyOverestimatePct(s)}%。
+        </div>
+        <div class="ab-note">AI 異常偵測 · 建議人工確認（非確認故障）</div>
+        ${confirmed?'':'<button class="btn tiny warn" onclick="confirmAnomaly()">派員確認車輛</button>'}
+      </div>` : '';
+
+  body.innerHTML=`
+    <div class="idet">
+      <div class="st-id">STATION #${s.id} · ${s.district}</div>
+      <div class="st-name">${s.name}</div>
+      <div class="status-banner ${sbClass}">
+        <span class="sb-dot"></span>
+        <span class="sb-txt"><span class="t">${statusTxt}</span></span>
+        <span class="sb-time">${s.waitMin>0? s.waitMin+"'":"—"}</span>
+      </div>
+      <div class="sec-h">Effective Supply</div>
+      <div class="stat-grid supply3">
+        <div class="cell"><div class="n">${reported}</div><div class="k">帳面車輛</div></div>
+        <div class="cell ${eff<=5?'alarm':'good'}"><div class="n">${eff}</div><div class="k">有效車輛</div></div>
+        <div class="cell ${fault>0?'alarm':''}"><div class="n">${fault}</div><div class="k">${confirmed?'已確認':'疑似異常'}</div></div>
+      </div>
+      ${anomBannerHtml}
+      ${predBlock}
+      ${(typeof ADDON!=='undefined')?ADDON.strictRiskBlock(s):''}
+      ${(typeof ADDON!=='undefined')?ADDON.anomalyFsmBlock(s):''}
+      ${ivBlock}
+      <div class="sec-h">Recent Status</div>
+      <div class="spark"><span class="lbl">有效供給 / LAST 12H</span><canvas id="sparkCv"></canvas></div>
+      <div class="btns">
+        ${interventionButtons(iv)}
+      </div>
+    </div>`;
+  drawSpark(s);
+}
+
+// action buttons gated by the intervention decision
+function interventionButtons(iv){
+  if(iv.type==='RELAY'){
+    return `<button class="btn primary attn" onclick="startRelay()">啟動友愛接力</button>
+            <button class="btn ghost" onclick="generateDispatch()">改用車隊調度</button>`;
+  }
+  if(iv.type==='HYBRID'){
+    return `<button class="btn primary warn2" onclick="startHybrid()">啟動混合策略</button>
+            <button class="btn ghost" onclick="generateDispatch()">直接車隊調度</button>`;
+  }
+  if(iv.type==='FLEET'){
+    return `<button class="btn ghost" onclick="startRelay()">仍要試友愛接力</button>
+            <button class="btn primary" onclick="generateDispatch()">Generate Dispatch</button>`;
+  }
+  // NONE
+  return `<button class="btn ghost" onclick="toast('已開啟站點監控視窗')">View Station</button>
+          <button class="btn primary" onclick="generateDispatch()">Generate Dispatch</button>`;
+}
+
+// 缺車風險：以有效供給評估（非帳面 avail），並將疑似異常視為額外壓力
+function demandRisk(s){
+  const eff=effectiveAvail(s);
+  const hasAnom=(s.suspectedFault ?? 0)>0;
+  if(s.empty===0) return {level:'low', label:'—（滿位）'};
+  // 有疑似異常車時，有效供給的可靠度下降，風險門檻上調
+  if(eff<=2 || (hasAnom && eff<=6)) return {level:'high', label:'HIGH · 預估 30 分鐘內可能缺車'};
+  if(eff<=6) return {level:'med',  label:'MEDIUM · 供給偏緊'};
+  return {level:'low', label:'LOW · 供給充足'};
+}
+
+function drawSpark(s){
+  const cv=document.getElementById('sparkCv'); if(!cv)return;
+  const r=cv.parentElement.getBoundingClientRect();
+  cv.width=r.width*DPR;cv.height=r.height*DPR;cv.style.width=r.width+'px';cv.style.height=r.height+'px';
+  const c=cv.getContext('2d');c.setTransform(DPR,0,0,DPR,0,0);
+  const w=r.width,h=r.height;
+  // synth trend ending at current avail
+  const n=24;const pts=[];let v=s.cap*0.5;
+  for(let i=0;i<n;i++){ v+= (rnd(i+s.gx, s.gy)-0.5)*s.cap*0.28; v=Math.max(0,Math.min(s.cap,v)); pts.push(v); }
+  const eff=effectiveAvail(s);
+  pts[n-1]=eff; pts[n-2]=(pts[n-2]+eff)/2;
+  const col=statusColor(s.status);
+  // baseline
+  c.strokeStyle='rgba(183,173,153,.12)';c.beginPath();c.moveTo(0,h-12);c.lineTo(w,h-12);c.stroke();
+  // area + line
+  c.beginPath();
+  pts.forEach((p,i)=>{const x=6+i*(w-12)/(n-1);const y=h-8-(p/s.cap)*(h-18);i?c.lineTo(x,y):c.moveTo(x,y);});
+  c.strokeStyle=col;c.lineWidth=1.8;c.stroke();
+  // fill
+  c.lineTo(w-6,h-8);c.lineTo(6,h-8);c.closePath();
+  c.fillStyle=col+'22';c.fill();
+  // end dot
+  const lx=6+(n-1)*(w-12)/(n-1), ly=h-8-(eff/s.cap)*(h-18);
+  c.fillStyle=col;c.beginPath();c.arc(lx,ly,3,0,Math.PI*2);c.fill();
+}
+
+/* ---- GENERATE DISPATCH ---- */
+// Legacy helper kept for compatibility: best source = candidate with lowest post-dispatch risk.
+function bestSource(target){
+  const cands=getSourceCandidates(target, 10);
+  return (cands[0] && cands[0].station) || DATA.stations.find(s=>s.id!==target.id && effectiveAvail(s)>0);
+}
+
+// PLAN holds the full recommendation model for the selected target.
+let PLAN=null;
+// RELAY holds the active relay intervention model for the right panel.
+let RELAY=null;
+
+/* ---- Intervention comparison: Relay vs Fleet (DEMO numbers) ---- */
+function interventionComparison(s){
+  const iv=decideIntervention(s);
+  const relayImpact=iv.expectedImpact||0;
+  // fleet impact (DEMO): a truck can cut most of the shortage risk
+  const fleetImpact=Math.min(90, Math.round(iv.peakRiskPct*0.85));
+  return {
+    iv,
+    relay:{ response:'快', cost:'低', impact:relayImpact },
+    fleet:{ response:'中', cost:'高', impact:fleetImpact }
+  };
+}
+
+/* ---- start a RELAY intervention (community relay first) ---- */
+function startRelay(){
+  const s=st(STATE.selectedId); if(!s) return;
+  const iv=decideIntervention(s);
+  const dir = iv.direction || relayDirection(s) || 'RETURN';
+  RELAY={ stationId:s.id, direction:dir, expectedImpact:iv.expectedImpact||0,
+          confidence:Math.round(getPrediction(s).confidence*100), startedRisk:iv.fleetRisk,
+          hybrid:false, escalated:false };
+  s.relayActive=true; s.relayActiveDir=dir;
+  STATE.detailMode='relay';
+  toast(`友愛接力已啟動 · ${directionLabel(dir)} · 預估改善 ${iv.expectedImpact||0}% (EST.)`);
+  STATE.calls=buildCalls(); renderCalls();
+  renderRight();
+  if(STATE.view==='public'){ pubRender(); }
+}
+function startHybrid(){
+  const s=st(STATE.selectedId); if(!s) return;
+  const iv=decideIntervention(s);
+  const dir = iv.direction || relayDirection(s) || 'RETURN';
+  RELAY={ stationId:s.id, direction:dir, expectedImpact:iv.expectedImpact||0,
+          confidence:Math.round(getPrediction(s).confidence*100), startedRisk:iv.fleetRisk,
+          hybrid:true, escalated:false };
+  s.relayActive=true; s.relayActiveDir=dir;
+  STATE.detailMode='relay';
+  toast('混合策略：先啟動友愛接力，同時準備車隊');
+  STATE.calls=buildCalls(); renderCalls();
+  renderRight();
+  if(STATE.view==='public'){ pubRender(); }
+}
+// escalate an insufficient relay to fleet dispatch (keeps existing dispatch flow)
+function escalateToFleet(){
+  const s=st(STATE.selectedId); if(!s) return;
+  if(RELAY) RELAY.escalated=true;
+  toast('友愛接力改善不足 · 升級為車隊調度 (FLEET DISPATCH)');
+  generateDispatch();
+}
+
+function renderRelayReco(s){
+  const title=document.getElementById('right-title');
+  title.textContent = RELAY && RELAY.hybrid ? 'Hybrid Intervention' : 'Community Relay';
+  const body=document.getElementById('right-body');
+  const dir=RELAY?RELAY.direction:relayDirection(s)||'RETURN';
+  const pred=getPrediction(s);
+  const risk30=Math.round(pred.risk30*100);
+  const dirTxt=directionLabel(dir);
+  const predState = dir==='BORROW' ? '預測 30 分鐘後可還車位不足' : '預測 30 分鐘後可能缺車';
+  const impact=RELAY?RELAY.expectedImpact:(decideIntervention(s).expectedImpact||0);
+  const conf=RELAY?RELAY.confidence:Math.round(pred.confidence*100);
+  const hybridBanner = RELAY&&RELAY.hybrid
+    ? `<div class="supply-note warn">混合策略進行中：友愛接力先行，車隊已準備。若風險未降可立即升級。</div>` : '';
+  body.innerHTML=`
+    <div class="reco">
+      <div class="reco-h">◈ ${RELAY&&RELAY.hybrid?'HYBRID · 友愛接力 + 車隊待命':'COMMUNITY RELAY · 友愛接力介入'} <span class="demo-pill">DEMO</span></div>
+      <div class="relay-card">
+        <div class="rc-station">${s.name}</div>
+        <div class="rc-pred ${dir==='BORROW'?'':'warn'}">${predState}</div>
+        <div class="rc-action">建議：<b>${dirTxt}</b></div>
+        <div class="relay-stats">
+          <div><span class="k">預估降低風險 (EST.)</span><span class="v good">${impact>0?impact+'%':'—'}</span></div>
+          <div><span class="k">目前 30min 風險</span><span class="v risk-${riskLevelClass(risk30)}">${risk30}%</span></div>
+          <div><span class="k">預測信心 (DEMO)</span><span class="v">${conf}%</span></div>
+        </div>
+        <div class="rc-note">依目前活動規則提供相關回饋。此為 DEMO 估計值。</div>
+      </div>
+      ${hybridBanner}
+      <div class="sec-h2">介入策略比較 · DEMO</div>
+      ${renderInterventionCompare(s)}
+      <div class="btns">
+        <button class="btn primary attn" onclick="publishRelayToPublic()">推送至 Public View</button>
+        <button class="btn ghost" onclick="escalateToFleet()">升級為車隊調度</button>
+        <button class="btn ghost" onclick="backToDetail()">Back</button>
+      </div>
+    </div>`;
+}
+
+function renderInterventionCompare(s){
+  const c=interventionComparison(s);
+  return `
+    <div class="iv-compare">
+      <div class="ivc-head"><span></span><span>友愛接力</span><span>車隊調度</span></div>
+      <div class="ivc-row"><span>回應速度</span><b>${c.relay.response}</b><b>${c.fleet.response}</b></div>
+      <div class="ivc-row"><span>成本</span><b>${c.relay.cost}</b><b>${c.fleet.cost}</b></div>
+      <div class="ivc-row"><span>改善程度 (EST.)</span><b class="good">${c.relay.impact}%</b><b class="good">${c.fleet.impact}%</b></div>
+    </div>
+    <div class="src-note">數字為 DEMO 估計；友愛接力回應快、成本低，但改善幅度通常小於車隊。</div>`;
+}
+
+// push the current relay recommendation into the public view + jump there (demo-friendly)
+function publishRelayToPublic(){
+  const s=st(STATE.selectedId); if(!s) return;
+  s.relayActive=true; s.relayActiveDir=(RELAY?RELAY.direction:relayDirection(s))||'RETURN';
+  STATE.pubSelectedId=s.id;
+  toast('已推送至 Public View · 民眾將看到友愛接力建議');
+  toggleView('public'); pubRender();
+}
+
+function generateDispatch(){
+  const target=st(STATE.selectedId); if(!target)return;
+  // 1) source optimization — rank by post-dispatch source risk (not distance-only)
+  const candidates=getSourceCandidates(target, 10);
+  const source=(candidates[0] && candidates[0].station) || bestSource(target);
+  if(!source){ toast('附近無可用來源站'); return; }
+
+  // 2) build three plans +5 / +10 / +15 (bounded by source dispatchable / safeReserve)
+  const maxDisp=dispatchable(source);
+  const plans=[5,10,15].map(bikes=>{
+    const benefit=calculateDispatchBenefit(target, source, bikes);
+    return {
+      key:bikes===5?'A':bikes===10?'B':'C',
+      bikes, ...benefit
+    };
+  });
+
+  // 3) pick recommended = highest benefit score among feasible plans
+  const feasible=plans.filter(p=>p.feasible);
+  const recommended=(feasible.length?feasible:plans).slice().sort((a,b)=>b.score-a.score)[0];
+
+  PLAN={ target, source, candidates, plans, recommendedKey:recommended.key, selectedKey:recommended.key, maxDisp };
+  applyPlanToRoute();
+  STATE.detailMode='reco';
+  renderRight();
+}
+
+// sync ROUTE + map readout to the currently selected plan
+function applyPlanToRoute(){
+  if(!PLAN) return;
+  const plan=PLAN.plans.find(p=>p.key===PLAN.selectedKey);
+  const src=PLAN.source, tgt=PLAN.target;
+  const km=dispatchService.km(src,tgt), min=dispatchService.eta(src,tgt);
+  ROUTE={from:src, to:tgt, bikes:plan.bikes, min, km:km.toFixed(1)};
+  STATE.routeAnim=0;
+  document.getElementById('rr-nodes').textContent=`${src.name} → ${tgt.name}`;
+  document.getElementById('rr-bikes').textContent=plan.bikes;
+  document.getElementById('rr-time').textContent=min;
+  document.getElementById('rr-dist').textContent=km.toFixed(1);
+  document.getElementById('route-readout').classList.add('on');
+}
+// called from plan cards
+function selectPlan(key){ if(!PLAN)return; PLAN.selectedKey=key; applyPlanToRoute(); renderRight(); }
+
+function renderReco(s){
+  const title=document.getElementById('right-title');
+  title.textContent='Dispatch Recommendation';
+  const body=document.getElementById('right-body');
+  if(!PLAN){ generateDispatch(); return; }
+
+  const tgt=PLAN.target, src=PLAN.source;
+  const tgtFault=(tgt.suspectedFault ?? 0);
+  const riskBefore=getStationRisk30(tgt);
+  const predLabel=predictionService.label();
+
+  // ---- source candidate comparison (top 2) ----
+  const cA=PLAN.candidates[0], cB=PLAN.candidates[1];
+  let srcCompare='';
+  if(cB){
+    srcCompare=`
+      <div class="sec-h2">來源站最佳化 · SOURCE OPTIMIZATION</div>
+      <div class="src-cands">
+        ${[cA,cB].map((c,i)=>`
+          <div class="src-c ${i===0?'chosen':''}">
+            ${i===0?'<span class="src-badge">選用</span>':''}
+            <div class="src-n">${c.station.name}</div>
+            <div class="src-row"><span>距離</span><b>${c.dist.toFixed(1)} km</b></div>
+            <div class="src-row"><span>ETA</span><b>${c.eta} min</b></div>
+            <div class="src-row"><span>可調度</span><b class="beige">${c.dispatchable}</b></div>
+            <div class="src-row"><span>調度後風險</span><b class="risk-${riskLevelClass(c.riskAfter)}">${c.riskAfter}%</b></div>
+          </div>`).join('')}
+      </div>
+      <div class="src-note">距離不是唯一決策因素：優先選擇「調度後自身風險較低」的來源站。</div>`;
+  }
+
+  // ---- plan cards A / B / C ----
+  const planCards=PLAN.plans.map(p=>{
+    const isRec=p.key===PLAN.recommendedKey;
+    const isSel=p.key===PLAN.selectedKey;
+    const stateTag = !p.feasible ? '<span class="pt blocked">不可推薦</span>'
+                   : isRec ? '<span class="pt rec">★ AI 建議</span>'
+                   : '<span class="pt ok">可行</span>';
+    const warn = p.sourceBecomesHigh ? '<div class="plan-warn">⚠ 可能造成來源站缺車</div>'
+               : !p.feasibleBikes ? '<div class="plan-warn">⚠ 來源站可調度量不足</div>' : '';
+    return `
+      <div class="plan-card ${isSel?'sel':''} ${isRec?'rec':''} ${!p.feasible?'blocked':''}" onclick="selectPlan('${p.key}')">
+        <div class="plan-h">
+          <span class="plan-title">方案 ${p.key} · +${p.bikes}</span>
+          ${stateTag}
+        </div>
+        <div class="plan-rows">
+          <div class="pr"><span>30min 風險</span><b class="risk-${riskLevelClass(p.sim.targetRisk30)}">${p.sim.targetRisk30}%</b></div>
+          <div class="pr"><span>60min 風險</span><b class="risk-${riskLevelClass(p.sim.targetRisk60)}">${p.sim.targetRisk60}%</b></div>
+          <div class="pr"><span>可維持</span><b>${p.stability>=120?'≥120':p.stability} 分鐘</b></div>
+          <div class="pr"><span>Source 風險</span><b class="risk-${riskLevelClass(p.sim.sourceRisk30)}">${p.sim.sourceRisk30}%</b></div>
+        </div>
+        ${warn}
+      </div>`;
+  }).join('');
+
+  // ---- recommended plan detail: why + before/after ----
+  const rec=PLAN.plans.find(p=>p.key===PLAN.selectedKey);
+  const why=`
+    <div class="why">
+      <div class="why-h">WHY THIS PLAN?</div>
+      ${rec.reasons.map(r=>`<div class="why-r ${r.startsWith('⚠')?'bad':''}">${r.startsWith('⚠')?'':'✓ '}${r}</div>`).join('')}
+      <div class="why-concl">${rec.feasible?`因此建議調度 <b>${rec.bikes}</b> 台。`:'此方案不建議採用。'}</div>
+    </div>`;
+
+  const beforeAfter=renderBeforeAfter(tgt, rec);
+
+  const supplyWarn = tgtFault>0
+    ? `<div class="supply-note warn">⚠ 目標站有效供給可能高估約 ${supplyOverestimatePct(tgt)}%（疑似 ${tgtFault} 台異常車）</div>`
+    : '';
+
+  body.innerHTML=`
+    <div class="reco">
+      <div class="reco-h">◈ AI 調度方案比較 · DECISION ENGINE</div>
+      <div class="flow">
+        <div class="node"><div class="n1">SOURCE · #${src.id}</div><div class="n2">${src.name}</div></div>
+        <div class="arrow">▶</div>
+        <div class="node"><div class="n1">TARGET · #${tgt.id}</div><div class="n2">${tgt.name}</div></div>
+      </div>
+      <div class="pred-tag">預測來源：${predLabel} · 目標站當前 30min 風險 <b class="risk-${riskLevelClass(riskBefore)}">${riskBefore}%</b></div>
+      ${srcCompare}
+      <div class="sec-h2">調度數量方案 · PLAN COMPARISON</div>
+      <div class="plan-list">${planCards}</div>
+      ${supplyWarn}
+      ${why}
+      ${beforeAfter}
+      <div class="btns">
+        <button class="btn primary" ${rec.feasible?'':'disabled'} onclick="acceptDispatch()">Accept · 方案 ${rec.key} (+${rec.bikes})</button>
+        <button class="btn ghost" onclick="backToDetail()">Back</button>
+      </div>
+    </div>`;
+}
+
+// 調度前 vs 調度後（含 30 / 60 分鐘）迷你視覺化
+function renderBeforeAfter(tgt, plan){
+  const cap=tgt.cap;
+  const beforeEff=effectiveAvail(tgt);
+  const riskBefore=getStationRisk30(tgt);
+  const rows=[
+    {k:'調度前',      v:beforeEff,               risk:riskBefore},
+    {k:'調度後',      v:plan.sim.targetAfterDispatch, risk:plan.sim.targetRiskAfter},
+    {k:'30 分鐘',    v:plan.sim.target30,        risk:plan.sim.targetRisk30},
+    {k:'60 分鐘',    v:plan.sim.target60,        risk:plan.sim.targetRisk60},
+  ];
+  return `
+    <div class="sec-h2">調度前 vs 調度後 · POST-DISPATCH PREDICTION</div>
+    <div class="ba">
+      ${rows.map(r=>`
+        <div class="ba-row">
+          <span class="ba-k">${r.k}</span>
+          <span class="ba-bar"><i style="width:${Math.min(100,Math.round(r.v/cap*100))}%" class="risk-bg-${riskLevelClass(r.risk)}"></i></span>
+          <span class="ba-v">${r.v}/${cap}</span>
+          <span class="ba-risk risk-${riskLevelClass(r.risk)}">${r.risk}%</span>
+        </div>`).join('')}
+    </div>`;
+}
+function backToDetail(){
+  STATE.detailMode='detail'; ROUTE=null; STATE.routeAnim=0; PLAN=null; RELAY=null;
+  document.getElementById('route-readout').classList.remove('on');
+  renderRight();
+}
+
+/* ---- staged dispatch lifecycle ----
+   Accept does NOT teleport bikes. Mission advances:
+   DISPATCHING → IN TRANSIT → ARRIVED → RESOLVED / PARTIALLY RESOLVED
+   Bikes are only applied to the target on ARRIVED; risk is recomputed then. */
+const LIFECYCLE=['DISPATCHING','TRANSIT','ARRIVED','DONE'];
+let dispatchSeq=5;
+
+function acceptDispatch(){
+  if(!ROUTE)return;
+  const src=ROUTE.from, tgt=ROUTE.to, bikes=ROUTE.bikes;
+  const riskBefore=getStationRisk30(tgt);
+  const newId='D-'+String(dispatchSeq++).padStart(3,'0');
+  const mission={
+    id:newId, route:`${short(src.name)} → ${short(tgt.name)}`, bikes,
+    status:'DISPATCHING', sourceId:src.id, targetId:tgt.id, riskBefore,
+    _staged:true
+  };
+  if(typeof ADDON!=='undefined'){
+    try{ ADDON.assignCrew(mission); }catch(e){}
+  }
+  DATA.dispatches.unshift(mission);
+
+  // reserve bikes from source immediately (they leave the source now)
+  src.reportedAvail=Math.max(0,(src.reportedAvail ?? src.avail)-bikes);
+  src.avail=Math.max(0, src.avail-bikes);
+
+  toast(`DISPATCH ${newId} · 方案 +${bikes} · 已指派，車輛整備中 (DISPATCHING)`);
+  STATE.calls=buildCalls();
+  backToDetail();
+  renderCalls(); renderDispatch(); renderRight(); updateTop(true);
+  if(STATE.view==='public') pubRender();
+
+  advanceMission(mission);
+}
+
+function advanceMission(m){
+  // DISPATCHING -> TRANSIT
+  m._t1=setTimeout(()=>{
+    m.status='TRANSIT';
+    renderDispatch();
+    toast(`DISPATCH ${m.id} · 車輛運送中 (IN TRANSIT)`);
+    // TRANSIT -> ARRIVED
+    m._t2=setTimeout(()=>{
+      m.status='ARRIVED';
+      // apply bikes to target now
+      const t=st(m.targetId);
+      if(t){
+        t.reportedAvail=(t.reportedAvail ?? t.avail)+m.bikes;
+        t.avail=(t.avail||0)+m.bikes;
+        t.empty=Math.max(0,t.empty-m.bikes);
+        t.imbalanceDuration=0;
+      }
+      renderDispatch();
+      toast(`DISPATCH ${m.id} · 車輛已抵達 (ARRIVED)`);
+      // ARRIVED -> resolve (recompute risk)
+      m._t3=setTimeout(()=>{
+        resolveMission(m);
+      }, 2200);
+    }, 4200);
+  }, 4200);
+}
+
+function resolveMission(m){
+  const t=st(m.targetId);
+  const riskAfter = t ? getStationRisk30(t) : 0;
+  m.riskAfter=riskAfter;
+  const stillHigh = riskAfter>=50;
+  if(t){
+    if(stillHigh){
+      t.status='warning'; t.issue='改善但仍需追蹤';
+    } else {
+      t.status='normal'; t.issue='已補車完成'; t.waitMin=0;
+    }
+  }
+  m.status = stillHigh ? 'PARTIAL' : 'DONE';
+  STATE.calls=buildCalls();
+  renderCalls(); renderDispatch(); updateTop(true);
+  if(STATE.selectedId===m.targetId && STATE.detailMode==='detail') renderRight();
+  if(STATE.view==='public') pubRender();
+  toast(stillHigh
+    ? `DISPATCH ${m.id} · 改善但仍需追蹤 · 風險 ${m.riskBefore}% → ${riskAfter}% (PARTIALLY RESOLVED)`
+    : `DISPATCH ${m.id} · 已解除 · 風險 ${m.riskBefore}% → ${riskAfter}% (RESOLVED)`);
+}
+
+function lifecycleLabel(st){
+  return st==='DISPATCHING'?'DISPATCHING'
+       : st==='TRANSIT'?'IN TRANSIT'
+       : st==='ARRIVED'?'ARRIVED'
+       : st==='PARTIAL'?'PARTIAL'
+       : st==='DONE'?'RESOLVED'
+       : st;
+}
+
+/* ---- confirm suspected anomaly (Demo state only) ----
+   確認後：疑似 → 已確認，並自帳面供給排除。avail 保留為 API 帳面值，
+   但 reportedAvail 下修，effectiveAvail 隨之更新，站點風險重新計算。 */
+function confirmAnomaly(){
+  const s=st(STATE.selectedId); if(!s || (s.suspectedFault??0)<=0) return;
+  const n=s.suspectedFault;
+  s.faultConfirmed=true;
+  // 已確認車輛自帳面可用供給中排除
+  s.reportedAvail=Math.max(0,(s.reportedAvail ?? s.avail)-n);
+  s.issue='已確認異常車輛';
+  STATE.calls=buildCalls();
+  toast(`已確認 ${n} 台異常車輛 · 已從有效供給排除（現 ${effectiveAvail(s)} 台）`);
+  renderCalls(); renderRight(); updateTop(true);
+  if(STATE.view==='public') pubRender();
+}
+function short(n){ return n.replace(/站|捷運站|車站|園區/g,'').slice(0,3)||n; }
+function etaStr(min){ const d=new Date(Date.now()+min*60000); return d.toTimeString().slice(0,5); }
+
+/* ---- top counters ---- */
+function updateTop(pop){
+  const calls=STATE.calls.length;
+  const crit=STATE.calls.filter(c=>c.prio==='HIGH').length;
+  const el=document.getElementById('ts-calls');
+  document.getElementById('ts-calls').textContent=calls;
+  document.getElementById('ts-crit').textContent=crit;
+  if(pop){ el.classList.remove('count-pop'); void el.offsetWidth; el.classList.add('count-pop'); }
+  updateAIKpi();
+}
+
+/* ---- AI prediction KPI (DEMO) ---- */
+function updateAIKpi(){
+  let alerts=0, relay=0, fleet=0, hybrid=0;
+  DATA.stations.forEach(s=>{
+    const iv=s.intervention||decideIntervention(s);
+    if(getStationRisk30(s)>=50) alerts++;
+    if(iv.type==='RELAY') relay++;
+    else if(iv.type==='FLEET') fleet++;
+    else if(iv.type==='HYBRID') hybrid++;
+  });
+  const set=(id,v)=>{const e=document.getElementById(id); if(e)e.textContent=v;};
+  set('kpi-alerts',alerts); set('kpi-relay',relay); set('kpi-fleet',fleet); set('kpi-hybrid',hybrid);
+  const pot=relay+hybrid;
+  const f=document.getElementById('kpi-potential');
+  if(f) f.textContent=`今日預估可透過友愛接力降低 ${pot} 次站點失衡 (EST.)`;
+}
+
+/* ---- toast ---- */
+let toastTimer;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+/* ---- clock ---- */
+function tick(){
+  const d=new Date();
+  document.getElementById('clock').textContent=d.toTimeString().slice(0,8);
+  document.getElementById('ts-date').textContent=`${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+  const pc=document.getElementById('pubClock'); if(pc) pc.textContent=d.toTimeString().slice(0,5);
+}
+
+/* =====================================================================
+   PUBLIC VIEW  — same DATA, humanized for the general public
+   ===================================================================== */
+
+// humanize internal status -> public-facing status
+// returns {level:'green'|'yellow'|'red'|'park', chipTxt, chipIco, msg, alert}
+function publicStatus(s){
+  // 民眾端以「有效供給」作為可借車數；不暴露內部故障判斷。
+  const bikes = effectiveAvail(s);
+  const noBike = bikes===0;
+  const noDock = s.empty===0;
+  // 當帳面與有效供給有落差時，僅給一句柔性提醒（不提「故障 / 疑似異常」）
+  const dataDiff = (s.suspectedFault ?? 0) > 0 && !noBike;
+  const diffMsg = dataDiff ? '（即時車輛數量可能與實際可用狀況存在差異）' : '';
+  if(noBike){
+    return {level:'red', chipIco:'🔴', chipTxt:'暫無可借車輛', bikes,
+      msg:'目前這個站點沒有可借的車輛，建議選擇下方附近其他站點。', alert:true};
+  }
+  if(noDock){
+    return {level:'park', chipIco:'🅿', chipTxt:'目前無法還車', bikes,
+      msg:'這個站點目前沒有可停放的車位，若您要還車，建議前往下方附近站點。', alert:true};
+  }
+  if(s.status==='warning' || bikes<=5 || dataDiff){
+    return {level:'yellow', chipIco:'🟡', chipTxt:'車輛較少', bikes,
+      msg:'目前可借車輛較少，可能很快借完，建議儘早前往或參考附近站點。'+diffMsg, alert:false};
+  }
+  return {level:'green', chipIco:'🟢', chipTxt:'可正常使用', bikes,
+    msg:'目前可以正常借車與還車。', alert:false};
+}
+
+// distance (meters) from user location to a station, mock but consistent
+function metersTo(gx,gy){
+  const d=Math.hypot(gx-USER_LOC.gx, gy-USER_LOC.gy);
+  return Math.round(d*180/10)*10;   // ~180m per grid unit, rounded to 10m
+}
+function walkMin(meters){ return Math.max(1, Math.round(meters/75)); } // ~75 m/min
+
+// recommendation scoring: not distance-only.
+// consider distance, available bikes, capacity headroom, and anomaly penalty.
+function scoreStation(s, need /* 'bike' | 'dock' */){
+  const meters=metersTo(s.gx,s.gy);
+  const supply = need==='dock' ? s.empty : effectiveAvail(s);  // 可借以有效供給計算
+  if(supply<=0) return null; // cannot serve the need
+  const distScore   = 1 - Math.min(meters,1500)/1500;        // closer better (0..1)
+  const supplyScore = Math.min(supply,20)/20;                 // more supply better
+  const capScore    = Math.min(s.cap,40)/40;                  // bigger station = more reliable
+  const anomalyPen  = (s.status==='critical'||s.status==='warning') ? 0.75 : 1;
+  // AI-aware: prefer stations where the user's action ALSO helps rebalancing (relay-recommended),
+  // and prefer stations predicted to still be usable in 30 min (avoid ones about to run out).
+  const iv = s.intervention || decideIntervention(s);
+  const helpfulRelay = (need==='dock' && (iv.direction==='RETURN'||iv.direction==='BOTH'))
+                    || (need==='bike' && (iv.direction==='BORROW'||iv.direction==='BOTH'));
+  const relayBoost = (helpfulRelay && (iv.type==='RELAY'||iv.type==='HYBRID')) ? 0.12 : 0;
+  const pred = getPrediction(s);
+  const futureOK = need==='dock' ? pred.predictedEmptyDockRatio30 : pred.predictedAvailableRatio30; // 0..1
+  const predScore = Math.min(1, futureOK*1.4);               // reward staying usable in 30 min
+  const score = (distScore*0.34 + supplyScore*0.34 + capScore*0.14 + predScore*0.18) * anomalyPen + relayBoost;
+  return { station:s, meters, min:walkMin(meters), supply, score, relayRecommended:relayBoost>0 };
+}
+
+// find nearby alternatives that can serve the need (bike to borrow / dock to return)
+function recommendNearbyStations(target, need){
+  return DATA.stations
+    .filter(s=>s.id!==target.id)
+    .map(s=>scoreStation(s,need))
+    .filter(Boolean)
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,4);
+}
+
+// does this station qualify for community relay hint?
+// hint shown for stations that are low on bikes but still have dock space (return demand helps rebalance)
+function relayEligible(s){
+  const eff=effectiveAvail(s);
+  return (s.status==='warning' || (eff<=5 && eff>0)) && s.empty>=3;
+}
+
+/* ---- search ---- */
+function searchStations(q){
+  q=(q||'').trim().toLowerCase();
+  if(!q) return DATA.stations.slice();
+  return DATA.stations.filter(s =>
+    s.name.toLowerCase().includes(q) || s.district.toLowerCase().includes(q) || s.id.includes(q));
+}
+function onSearchInput(v){
+  const box=document.getElementById('pubResults');
+  const list=searchStations(v);
+  if(list.length===0){
+    box.innerHTML='<div class="nores">找不到符合的站點</div>';
+    box.classList.add('on'); return;
+  }
+  box.innerHTML=list.map(s=>{
+    const ps=publicStatus(s);
+    const col = ps.level==='green'?'var(--normal)':ps.level==='yellow'?'var(--attention)':ps.level==='park'?'var(--beige)':'var(--critical)';
+    return `<div class="res" onclick="pubSelect('${s.id}')">
+      <span class="rdot" style="background:${col}"></span>
+      <span class="rn">${s.name}</span>
+      <span class="rd">${s.district}</span>
+      <span class="rb">🚲 ${effectiveAvail(s)}</span>
+    </div>`;
+  }).join('');
+  box.classList.add('on');
+}
+document.addEventListener('click',e=>{
+  const sc=document.querySelector('#public .pub-search');
+  if(sc && !sc.contains(e.target)) document.getElementById('pubResults').classList.remove('on');
+});
+
+/* ---- public station select ---- */
+function pubSelect(id){
+  STATE.pubSelectedId=id;
+  STATE.pubNav=null; STATE.pubRouteAnim=0;
+  document.getElementById('pub-nav-readout').classList.remove('on');
+  document.getElementById('pubResults').classList.remove('on');
+  const s=st(id);
+  const inp=document.getElementById('pubSearch'); if(inp && s) inp.value=s.name;
+  pubRenderInfo();
+  pubRenderNearby();
+}
+
+function pubRender(){
+  pubRenderInfo();
+  pubRenderNearby();
+}
+
+function pubRenderInfo(){
+  const body=document.getElementById('pubInfoBody');
+  const tag=document.getElementById('pub-info-tag');
+  const s=st(STATE.pubSelectedId);
+  if(!s){
+    tag.textContent='';
+    body.innerHTML=`<div class="pinfo-inner"><div class="empty-hint">
+      請在上方搜尋，或點選地圖上的站點<br>即可查看即時借還狀態。</div></div>`;
+    return;
+  }
+  const ps=publicStatus(s);
+  const meters=metersTo(s.gx,s.gy);
+  tag.textContent=`距您約 ${meters} m`;
+  const chipClass='chip-'+ps.level;
+  // Relay is now driven by the intervention decision (RELAY / HYBRID / active), not raw low-usage.
+  const iv=decideIntervention(s);
+  const showRelay = s.relayActive || iv.type==='RELAY' || iv.type==='HYBRID';
+  const dir = s.relayActiveDir || iv.direction || relayDirection(s) || 'RETURN';
+  const pred=getPrediction(s);
+  const predState = dir==='BORROW' ? '預測 30 分鐘後：可還車位可能不足' : '預測 30 分鐘後：可能缺車';
+  const actionTxt = dir==='BORROW' ? '從此站借車' : '還車到此站';
+  const impact = iv.expectedImpact||0;
+  const confPct = Math.round(pred.confidence*100);
+  const relayHtml = showRelay ? `
+      <div class="relay">
+        <div class="rh">◈ 友愛接力推薦 <span class="relay-demo">DEMO</span></div>
+        <div class="relay-pub-pred">${predState}</div>
+        <div class="relay-pub-action">建議：<b>${actionTxt}</b></div>
+        <div class="relay-pub-stats">
+          <div><span>預估${dir==='BORROW'?'降低滿站':'降低缺車'}風險 (EST.)</span><b>${impact>0?impact+'%':'—'}</b></div>
+          <div><span>預測信心 (DEMO)</span><b>${confPct}%</b></div>
+        </div>
+        <p class="relay-pub-note">若您原本就有${dir==='BORROW'?'借車':'還車'}需求，可考慮${actionTxt}，協助鄰里之間的車輛調度。依目前活動規則提供相關回饋。</p>
+        <button class="rbtn" onclick="pubNavigate('${s.id}')">開始導航</button>
+      </div>` : '';
+  body.innerHTML=`
+    <div class="pinfo-inner">
+      <div class="pub-st-name">${s.name}</div>
+      <div class="pub-st-dist">${s.district} · 距您約 ${meters} m · 步行約 ${walkMin(meters)} 分鐘</div>
+      <div class="pub-status-chip ${chipClass}">${ps.chipIco} ${ps.chipTxt}</div>
+      <div class="pub-bignums">
+        <div class="cell ${ps.bikes===0?'zero':''}"><div class="ico">🚲</div><div class="n">${ps.bikes}</div><div class="k">可借車輛</div></div>
+        <div class="cell ${s.empty===0?'zero':''}"><div class="ico">🅿</div><div class="n">${s.empty}</div><div class="k">可還車位</div></div>
+      </div>
+      <div class="pub-msg ${ps.alert?'alert':''}">${ps.msg}</div>
+      ${relayHtml}
+    </div>`;
+}
+
+function pubRenderNearby(){
+  const body=document.getElementById('pubNearbyBody');
+  const tagEl=document.getElementById('pub-nearby-tag');
+  const s=st(STATE.pubSelectedId);
+  if(!s){ body.innerHTML=`<div class="nearby-empty">選擇站點後，若該站無車或無位，這裡會顯示附近可用的替代站點。</div>`; tagEl.textContent='依可靠度排序'; return; }
+
+  const ps=publicStatus(s);
+  let need=null, head='';
+  if(ps.level==='red'){ need='bike'; head='附近可借車站點'; }
+  else if(ps.level==='park'){ need='dock'; head='附近可還車站點'; }
+
+  if(!need){
+    tagEl.textContent='此站可正常使用';
+    body.innerHTML=`<div class="nearby-empty">${s.name} 目前可正常使用，暫時不需要前往其他站點。您仍可搜尋其他站點查詢。</div>`;
+    return;
+  }
+  tagEl.textContent = need==='bike'?'AI 排序（可靠度 · 預測 · 距離）':'AI 排序（可靠度 · 預測 · 距離）';
+  const recs=recommendNearbyStations(s, need);
+  if(recs.length===0){ body.innerHTML=`<div class="nearby-empty">附近暫無合適的替代站點。</div>`; return; }
+  body.innerHTML=`<div class="nearby-wrap">`+recs.map((r,i)=>{
+    const supplyLabel = need==='dock'?'可還車位':'可借車輛';
+    const supplyIco = need==='dock'?'🅿':'🚲';
+    const active = STATE.pubNav && STATE.pubNav.to.id===r.station.id;
+    const aiTag = r.relayRecommended
+      ? `<span class="rc-ai">${need==='dock'?'AI 建議還車站':'AI 建議借車站'}</span>` : '';
+    return `<div class="rec-card ${i===0?'best':''} ${r.relayRecommended?'ai':''}">
+      ${i===0?'<span class="rc-badge">推薦</span>':''}
+      <div class="rc-name">${r.station.name}</div>
+      ${aiTag}
+      <div class="rc-dist">${r.station.district} · ${r.meters} m · 約 ${r.min} 分鐘</div>
+      <div class="rc-stats">
+        <div class="rs"><div class="v">${supplyIco} ${r.supply}</div><div class="k">${supplyLabel}</div></div>
+        <div class="rs"><div class="v">${r.meters}</div><div class="k">公尺</div></div>
+        <div class="rs"><div class="v">${r.min}</div><div class="k">分鐘</div></div>
+      </div>
+      <button class="rc-go ${active?'active':''}" onclick="pubNavigate('${r.station.id}')">${active?'導航中':'前往'}</button>
+    </div>`;
+  }).join('')+`</div>`;
+}
+
+/* ---- public navigation (mock user location -> station) ---- */
+function pubNavigate(id){
+  const to=st(id); if(!to)return;
+  const meters=metersTo(to.gx,to.gy);
+  STATE.pubNav={ to, meters, min:walkMin(meters) };
+  STATE.pubRouteAnim=0;
+  document.getElementById('pnav-name').textContent=`您的位置 → ${to.name}`;
+  document.getElementById('pnav-dist').textContent=meters;
+  document.getElementById('pnav-time').textContent=walkMin(meters);
+  document.getElementById('pub-nav-readout').classList.add('on');
+  pubRenderNearby();
+  toast(`前往 ${to.name} · ${meters} m · 約 ${walkMin(meters)} 分鐘`);
+}
+
+/* =====================================================================
+   PUBLIC MAP  (own canvas, reuses same iso projection + DATA)
+   ===================================================================== */
+const pubCanvas=document.getElementById('pubMapCanvas');
+const pctx=pubCanvas.getContext('2d');
+let PW=0,PH=0, PORIGIN={x:0,y:0};
+function pubResize(){
+  const host=pubCanvas.parentElement; if(!host)return;
+  const r=host.getBoundingClientRect();
+  if(r.width===0) return;
+  PW=r.width; PH=r.height;
+  pubCanvas.width=PW*DPR; pubCanvas.height=PH*DPR;
+  pubCanvas.style.width=PW+'px'; pubCanvas.style.height=PH+'px';
+  pctx.setTransform(DPR,0,0,DPR,0,0);
+  PORIGIN.x=PW/2-10;
+  PORIGIN.y=PH/2-(GRID.rows*TILE.h)/2+20;
+}
+function piso(gx,gy){ return { x:PORIGIN.x+(gx-gy)*TILE.w/2, y:PORIGIN.y+(gx+gy)*TILE.h/2 }; }
+
+function pubDrawGround(){
+  for(let gy=0;gy<GRID.rows;gy++)for(let gx=0;gx<GRID.cols;gx++){
+    const t=cellType(gx,gy);
+    let fill = t==='river'?'#1e2b33': t==='road'?'#20242b': ((gx+gy)%2?'#181c22':'#1b1f26');
+    const p=piso(gx,gy);
+    pctx.beginPath();
+    pctx.moveTo(p.x,p.y);pctx.lineTo(p.x+TILE.w/2,p.y+TILE.h/2);pctx.lineTo(p.x,p.y+TILE.h);pctx.lineTo(p.x-TILE.w/2,p.y+TILE.h/2);pctx.closePath();
+    pctx.fillStyle=fill;pctx.fill();pctx.strokeStyle='rgba(0,0,0,.22)';pctx.lineWidth=1;pctx.stroke();
+  }
+}
+function pubDrawBuilding(gx,gy){
+  const p=piso(gx,gy);const seed=rnd(gx,gy),seed2=rnd(gy,gx);
+  const h=12+seed*34, inset=10+seed2*7, w=TILE.w/2-inset, d=TILE.h/2-inset*0.5;
+  const bx=p.x, byBase=p.y+TILE.h/2, topOff=h;
+  const bTop={x:bx,y:byBase-d-topOff},bRight={x:bx+w,y:byBase-topOff},bBot={x:bx,y:byBase+d-topOff},bLeft={x:bx-w,y:byBase-topOff};
+  const gRight={x:bx+w,y:byBase},gBot={x:bx,y:byBase+d},gLeft={x:bx-w,y:byBase};
+  pctx.beginPath();pctx.moveTo(bLeft.x,bLeft.y);pctx.lineTo(bBot.x,bBot.y);pctx.lineTo(gBot.x,gBot.y);pctx.lineTo(gLeft.x,gLeft.y);pctx.closePath();pctx.fillStyle='#232830';pctx.fill();
+  pctx.beginPath();pctx.moveTo(bBot.x,bBot.y);pctx.lineTo(bRight.x,bRight.y);pctx.lineTo(gRight.x,gRight.y);pctx.lineTo(gBot.x,gBot.y);pctx.closePath();pctx.fillStyle='#1b1f26';pctx.fill();
+  pctx.beginPath();pctx.moveTo(bTop.x,bTop.y);pctx.lineTo(bRight.x,bRight.y);pctx.lineTo(bBot.x,bBot.y);pctx.lineTo(bLeft.x,bLeft.y);pctx.closePath();pctx.fillStyle='#2e343d';pctx.fill();
+  pctx.strokeStyle='rgba(0,0,0,.3)';pctx.lineWidth=1;pctx.stroke();
+}
+function pubDrawBuildings(){
+  for(let gy=0;gy<GRID.rows;gy++)for(let gx=0;gx<GRID.cols;gx++){
+    if(cellType(gx,gy)==='block'){
+      if(DATA.stations.some(s=>s.gx===gx&&s.gy===gy))continue;
+      if(rnd(gx*3.1,gy*1.7)>0.32) pubDrawBuilding(gx,gy);
+    }
+  }
+}
+function pubStatusColor(s){
+  const ps=publicStatus(s);
+  return ps.level==='green'?'#6f8f5f':ps.level==='yellow'?'#c2a63c':ps.level==='park'?'#b7ad99':'#b23c34';
+}
+function pubDrawMarker(s){
+  const p=piso(s.gx,s.gy);const baseY=p.y+TILE.h/2;
+  const selected=STATE.pubSelectedId===s.id;
+  const ps=publicStatus(s);
+  const col=pubStatusColor(s);
+  const big = selected || ps.level==='red';
+  const r=big?12:8;
+  pctx.fillStyle='rgba(0,0,0,.35)';pctx.beginPath();pctx.ellipse(p.x,baseY,10,4,0,0,Math.PI*2);pctx.fill();
+  if(selected || ps.level==='red'){
+    const pr=r+6+Math.sin(pulse)*5+6;
+    pctx.strokeStyle=selected?'rgba(183,173,153,'+(0.5-0.4*Math.abs(Math.sin(pulse)))+')':'rgba(178,60,52,'+(0.5-0.4*Math.abs(Math.sin(pulse)))+')';
+    pctx.lineWidth=2;pctx.beginPath();pctx.arc(p.x,baseY-26,pr,0,Math.PI*2);pctx.stroke();
+  }
+  const pinY=baseY-26;
+  pctx.strokeStyle='rgba(0,0,0,.5)';pctx.lineWidth=2;pctx.beginPath();pctx.moveTo(p.x,baseY);pctx.lineTo(p.x,pinY);pctx.stroke();
+  pctx.beginPath();pctx.arc(p.x,pinY,r,0,Math.PI*2);pctx.fillStyle=selected?'#d8cdb4':col;pctx.fill();
+  pctx.strokeStyle=selected?'#fff':'rgba(0,0,0,.6)';pctx.lineWidth=selected?2:1.5;pctx.stroke();
+  // icon: bike count or park symbol
+  pctx.fillStyle=(ps.level==='park'||selected)?'#16191f':'#fff';
+  pctx.font='bold 10px Oswald';pctx.textAlign='center';pctx.textBaseline='middle';
+  pctx.fillText(ps.level==='park'?'P':String(ps.bikes),p.x,pinY);
+  // relay indicator (public sees the community-relay nudge, not internal fleet/risk)
+  const iv=s.intervention||decideIntervention(s);
+  const relayHere = s.relayActive || iv.type==='RELAY' || iv.type==='HYBRID';
+  if(relayHere){
+    pctx.fillStyle='#c2a63c';pctx.strokeStyle='#16191f';pctx.lineWidth=1.5;
+    pctx.beginPath();pctx.arc(p.x+r-1,pinY-r+2,6,0,Math.PI*2);pctx.fill();pctx.stroke();
+    pctx.fillStyle='#16191f';pctx.font='bold 8px Oswald';pctx.textBaseline='middle';
+    pctx.fillText('♻',p.x+r-1,pinY-r+2);
+  }
+  // label
+  pctx.font='11px "Noto Sans TC"';pctx.textAlign='center';pctx.textBaseline='top';
+  const relayTag = relayHere ? (s.relayActiveDir==='BORROW'||iv.direction==='BORROW'?'・建議借車':'・建議還車') : '';
+  const labelTxt = s.name + relayTag;
+  const tw=pctx.measureText(labelTxt).width;
+  pctx.fillStyle='rgba(18,21,26,.78)';pctx.fillRect(p.x-tw/2-5,pinY+r+7,tw+10,15);
+  pctx.fillStyle=selected?'#e8e2d5':relayHere?'#d4bf6a':'#b7ad99';pctx.fillText(labelTxt,p.x,pinY+r+9);
+}
+function pubDrawUser(){
+  const p=piso(USER_LOC.gx,USER_LOC.gy);const y=p.y+TILE.h/2;
+  pctx.fillStyle='rgba(134,165,110,.25)';pctx.beginPath();pctx.arc(p.x,y-8,10+Math.sin(pulse)*3,0,Math.PI*2);pctx.fill();
+  pctx.fillStyle='#86a56e';pctx.strokeStyle='#fff';pctx.lineWidth=2;
+  pctx.beginPath();pctx.arc(p.x,y-8,6,0,Math.PI*2);pctx.fill();pctx.stroke();
+  pctx.fillStyle='#e8e2d5';pctx.font='700 9px Oswald';pctx.textAlign='center';pctx.fillText('您的位置',p.x,y-26);
+}
+function pubDrawNav(){
+  if(!STATE.pubNav)return;
+  const a=piso(USER_LOC.gx,USER_LOC.gy), b=piso(STATE.pubNav.to.gx,STATE.pubNav.to.gy);
+  const ax=a.x, ay=a.y+TILE.h/2-8, bx=b.x, by=b.y+TILE.h/2-26;
+  const mx=(ax+bx)/2, my=Math.min(ay,by)-40;
+  const t=Math.min(STATE.pubRouteAnim,1);
+  pctx.strokeStyle='rgba(134,165,110,.95)';pctx.lineWidth=3;pctx.setLineDash([7,6]);pctx.lineDashOffset=-pulse*6;
+  pctx.beginPath();pctx.moveTo(ax,ay);
+  const steps=40;
+  for(let i=1;i<=steps*t;i++){const u=i/steps;const x=(1-u)*(1-u)*ax+2*(1-u)*u*mx+u*u*bx;const y=(1-u)*(1-u)*ay+2*(1-u)*u*my+u*u*by;pctx.lineTo(x,y);}
+  pctx.stroke();pctx.setLineDash([]);
+}
+function pubRenderMap(){
+  if(PW===0){ pubResize(); if(PW===0) return; }
+  pctx.clearRect(0,0,PW,PH);
+  pubDrawGround();
+  pubDrawBuildings();
+  const sorted=[...DATA.stations].sort((a,b)=>(a.gx+a.gy)-(b.gx+b.gy));
+  sorted.forEach(pubDrawMarker);
+  pubDrawUser();
+  pubDrawNav();
+}
+// public map click -> select station
+pubCanvas.addEventListener('click',e=>{
+  const r=pubCanvas.getBoundingClientRect();
+  const mx=e.clientX-r.left,my=e.clientY-r.top;
+  let hit=null,best=1e9;
+  DATA.stations.forEach(s=>{const p=piso(s.gx,s.gy);const px=p.x,py=p.y+TILE.h/2-26;const d=Math.hypot(mx-px,my-py);if(d<20&&d<best){best=d;hit=s;}});
+  if(hit) pubSelect(hit.id);
+});
+
+/* ---- view toggle ---- */
+function toggleView(v){
+  STATE.view=v;
+  const pub = v==='public';
+  document.body.classList.toggle('public-mode', pub);
+  // sync both toggle widgets
+  document.getElementById('tgl-ops').classList.toggle('active',!pub);
+  document.getElementById('tgl-pub').classList.toggle('active',pub);
+  document.getElementById('tgl-ops2').classList.toggle('active',!pub);
+  document.getElementById('tgl-pub2').classList.toggle('active',pub);
+  if(pub){
+    // default the public selection to the ops-selected station for continuity
+    if(!STATE.pubSelectedId) STATE.pubSelectedId=STATE.selectedId;
+    const s=st(STATE.pubSelectedId);
+    const inp=document.getElementById('pubSearch'); if(inp&&s)inp.value=s.name;
+    pubResize(); pubRender();
+  }
+}
+
+/* =====================================================================
+   DEMO MODE  — scripted end-to-end story (no page refresh)
+   ===================================================================== */
+let demoRunning=false;
+function runDemo(){
+  if(demoRunning) return;
+  demoRunning=true;
+  const btn=document.getElementById('demoBtn');
+  btn.classList.add('running'); btn.textContent='● DEMO RUNNING';
+  const steps=[];
+  const add=(delay,fn)=>steps.push({delay,fn});
+  const T='0012';    // 三重捷運站 (cap 30) — demo target
+
+  // [1] 站點目前正常，但趨勢正在惡化（仍有大量停車位 → 民眾行為有改善空間）
+  add(0, ()=>{
+    toggleView('operations');
+    const s=st(T);
+    s.avail=9; s.reportedAvail=9; s.suspectedFault=0; s.faultConfirmed=false; s.longestIdleMin=0;
+    s.empty=21; s.status='normal'; s.issue='運作正常'; s.prio='LOW';
+    s.delta30=-3; s.delta60=-6; s.imbalanceDuration=0;
+    DATA.dispatches=DATA.dispatches.filter(d=>!d._staged);
+    refreshAllAI(); STATE.calls=buildCalls();
+    renderCalls(); renderDispatch(); updateTop(true);
+    selectStation(T);
+    toast('Step 1 · 三重捷運站 目前正常（9/30），但供給趨勢正在惡化');
+  });
+  // [2] 預測：30 分鐘後缺車風險（趨勢惡化，但仍有大量空位 → 民眾可協助）
+  add(3000, ()=>{
+    const s=st(T); s.delta30=-8; s.delta60=-13; s.empty=21;   // deteriorate further, docks available
+    refreshStationAI(s); STATE.calls=buildCalls(); renderCalls(); selectStation(T);
+    toast(`Step 2 · ${predictionService.label()} · 預測 30 分鐘後缺車風險 ${getStationRisk30(s)}%`);
+  });
+  // [3] Decision Engine 啟動
+  add(2800, ()=>{ selectStation(T); toast('Step 3 · Decision Engine 啟動 · 判斷「該由誰處理」'); });
+  // [4] 比較三種策略：立即派車 / 友愛接力 / 混合
+  add(2800, ()=>{
+    const c=interventionComparison(st(T));
+    toast(`Step 4 · 比較（DEMO）· 友愛接力 改善~${c.relay.impact}% / 車隊 改善~${c.fleet.impact}% · Relay 快且成本低`);
+  });
+  // [5] AI 選擇 RELAY FIRST（站點仍有足夠空位，民眾還車可改善）
+  add(2800, ()=>{
+    const s=st(T);
+    const iv=decideIntervention(s);
+    // ensure a relay-first posture for the demo narrative
+    if(iv.type==='FLEET'){ s.empty=Math.max(s.empty, Math.round(s.cap*0.6)); refreshStationAI(s); }
+    startRelay();
+    toast('Step 5 · AI 決策：RELAY FIRST · 先啟動友愛接力，鼓勵民眾還車');
+  });
+  // [6] Public View 出現友愛接力建議
+  add(3000, ()=>{
+    publishRelayToPublic();
+    const rec=recommendNearbyStations(st(T),'bike')[0];
+    if(rec) pubNavigate(rec.station.id);
+    toast('Step 6 · Public View · 「建議還車到三重捷運站」+ 附近推薦導航');
+  });
+  // [7] 模擬一段時間後風險仍高 → Relay 改善不足
+  add(4200, ()=>{
+    toggleView('operations');
+    const s=st(T);
+    s.avail=Math.max(2, s.avail-4); s.reportedAvail=s.avail; s.empty=Math.min(s.cap, s.empty+4);
+    s.delta30=-4; s.imbalanceDuration=18;
+    refreshStationAI(s); STATE.calls=buildCalls(); renderCalls();
+    selectStation(T);
+    toast(`Step 7 · 友愛接力改善不足 · 目前 30min 風險仍 ${getStationRisk30(s)}%`);
+  });
+  // [8] 自動升級為 FLEET DISPATCH → 進入既有 dispatch flow
+  add(2800, ()=>{
+    selectStation(T);
+    escalateToFleet();   // -> generateDispatch() (plan comparison + source optimization)
+    toast('Step 8 · 升級為 FLEET DISPATCH · 產生調度方案（來源最佳化 + +5/+10/+15）');
+  });
+  // [9] AI 建議方案 + 調度前/後
+  add(3000, ()=>{
+    if(PLAN){
+      const rec=PLAN.plans.find(p=>p.key===PLAN.recommendedKey);
+      if(PLAN.selectedKey!==PLAN.recommendedKey){ PLAN.selectedKey=PLAN.recommendedKey; applyPlanToRoute(); renderRight(); }
+      toast(`Step 9 · Decision Engine 建議 方案 ${rec.key} (+${rec.bikes}) · 調度前 ${rec.riskBefore}% → 後 30min ${rec.sim.targetRisk30}%`);
+    }
+  });
+  // [10] Accept → 分階段派遣（DISPATCHING → IN TRANSIT → ARRIVED → RESOLVED）
+  add(2800, ()=>{
+    if(PLAN){ acceptDispatch(); toast('Step 10 · Accept · DISPATCHING → IN TRANSIT → ARRIVED → 風險重算'); }
+  });
+  // [11] 完成後回到站點看風險重算
+  add(11000, ()=>{
+    selectStation(T);
+    toast(`Step 11 · 調度完成後重算 · 三重捷運站 目前 30min 風險 ${getStationRisk30(st(T))}%`);
+  });
+  // [12] 結束
+  add(2600, ()=>{
+    btn.classList.remove('running'); btn.textContent='▶ Demo Mode'; demoRunning=false;
+    toast('Demo 完成 · Predict → Decide → Relay → Recalculate → Fleet Escalation');
+  });
+
+  // run the sequence
+  let acc=0;
+  steps.forEach(step=>{ acc+=step.delay; setTimeout(step.fn, acc); });
+}
+
+/* =====================================================================
+   INIT
+   ===================================================================== */
+function init(){
+  refreshAllAI();          // seed prediction + intervention on every station first
+  resize();
+  pubResize();
+  renderCalls();
+  renderDuty();
+  renderDispatch();
+  updateTop();
+  selectStation('0012');   // open the top critical call
+  STATE.pubSelectedId='0012';
+  pubRender();
+  tick(); setInterval(tick,1000);
+  loop();
+
+  // proactive anomaly notification on load (does not wait for operator click)
+  setTimeout(()=>{
+    const s=st('0012');
+    if(s && (s.suspectedFault??0)>0 && !s.faultConfirmed){
+      const rep=(s.reportedAvail ?? s.avail), eff=effectiveAvail(s);
+      toast(`🚨 主動告警 · ${s.name} 發現 ${s.suspectedFault} 台疑似異常車輛 · 有效供給 ${rep} → ${eff}`);
+    }
+  }, 1500);
+
+  // simulated live event: a warning escalates after a bit (marker pulse + counter)
+  setTimeout(()=>{
+    const s=st('0084'); if(s && s.status==='warning'){
+      s.status='critical'; s.issue='無車可借'; s.avail=0; s.reportedAvail=0; s.suspectedFault=0; s.longestIdleMin=0; s.empty=s.cap; s.waitMin=24; s.prio='HIGH';
+      STATE.calls=buildCalls();
+      renderCalls(); updateTop(true);
+      if(STATE.view==='public') pubRender();
+      toast('新異常回報 · 蘆洲站 轉為 CRITICAL');
+    }
+  }, 9000);
+}
+window.addEventListener('resize',()=>{resize(); pubResize(); const s=st(STATE.selectedId); if(s&&STATE.detailMode==='detail')drawSpark(s); if(STATE.view==='public')pubRender();});
+init();
+</script>
+</body>
+</html>
